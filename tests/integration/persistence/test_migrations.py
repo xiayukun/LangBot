@@ -108,7 +108,7 @@ class TestSQLiteMigrationUpgrade:
         await run_alembic_upgrade(sqlite_engine, 'head')
 
         assert await get_alembic_current(sqlite_engine) == _get_script_head()
-        assert _get_script_head() == '0022_bot_routing_mode'
+        assert _get_script_head() == '0023_notification_gateway'
 
     @pytest.mark.asyncio
     async def test_upgrade_from_reasoning_config_head_to_merged_head(self, sqlite_engine):
@@ -119,7 +119,42 @@ class TestSQLiteMigrationUpgrade:
         await run_alembic_stamp(sqlite_engine, '0018_llm_reasoning_config')
         await run_alembic_upgrade(sqlite_engine, 'head')
 
-        assert await get_alembic_current(sqlite_engine) == '0022_bot_routing_mode'
+        assert await get_alembic_current(sqlite_engine) == '0023_notification_gateway'
+
+    @pytest.mark.asyncio
+    async def test_notification_gateway_migration_creates_durable_delivery_tables(self, sqlite_engine):
+        async with sqlite_engine.begin() as conn:
+            await conn.execute(text('CREATE TABLE workspaces (uuid VARCHAR(36) PRIMARY KEY)'))
+            await conn.execute(
+                text(
+                    'CREATE TABLE bots ('
+                    'uuid VARCHAR(255) PRIMARY KEY, '
+                    'workspace_uuid VARCHAR(36) NOT NULL, '
+                    'UNIQUE (workspace_uuid, uuid))'
+                )
+            )
+
+        await run_alembic_stamp(sqlite_engine, '0022_bot_routing_mode')
+        await run_alembic_upgrade(sqlite_engine, 'head')
+
+        async with sqlite_engine.connect() as conn:
+            tables = await conn.run_sync(lambda sync_conn: set(sqlalchemy.inspect(sync_conn).get_table_names()))
+            target_columns = await conn.run_sync(
+                lambda sync_conn: {
+                    column['name']
+                    for column in sqlalchemy.inspect(sync_conn).get_columns('notification_targets')
+                }
+            )
+            job_uniques = await conn.run_sync(
+                lambda sync_conn: {
+                    constraint['name']
+                    for constraint in sqlalchemy.inspect(sync_conn).get_unique_constraints('notification_jobs')
+                }
+            )
+
+        assert {'notification_targets', 'notification_jobs', 'notification_attempts'} <= tables
+        assert {'workspace_uuid', 'bot_uuid', 'target_type', 'target_id', 'enabled'} <= target_columns
+        assert 'uq_notification_jobs_idempotency' in job_uniques
 
     @pytest.mark.asyncio
     async def test_bot_routing_mode_preserves_existing_bots_and_defaults_new_bots_to_routes_only(

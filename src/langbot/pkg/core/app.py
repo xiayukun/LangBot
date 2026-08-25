@@ -28,6 +28,7 @@ from ..api.http.service import model as model_service
 from ..api.http.service import provider as provider_service
 from ..api.http.service import pipeline as pipeline_service
 from ..api.http.service import bot as bot_service
+from ..api.http.service import notification as notification_service
 from ..api.http.service import knowledge as knowledge_service
 from ..api.http.service import mcp as mcp_service
 from ..api.http.service import apikey as apikey_service
@@ -174,6 +175,8 @@ class Application:
     pipeline_service: pipeline_service.PipelineService = None
 
     bot_service: bot_service.BotService = None
+
+    notification_service: notification_service.NotificationService = None
 
     knowledge_service: knowledge_service.KnowledgeService = None
 

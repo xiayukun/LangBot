@@ -35,11 +35,12 @@ if typing.TYPE_CHECKING:
 # Source: https://developers.openai.com/codex/extend/mcp
 INSTRUCTIONS = """\
 This MCP server manages a LangBot instance. LangBot is an LLM-native instant
-messaging bot platform. Discover resources before acting. To send a message,
-call `list_bots`, choose an existing bot, then call `send_message`. Never guess
-a bot UUID or person/group target ID; ask the operator when a target ID is not
-available. Treat sends and configuration changes as writes, and never request
-or expose API keys or messaging-platform credentials.
+messaging bot platform. For notifications, call `list_notification_targets`,
+choose only operator-managed target UUIDs, then call `send_notification` with a
+stable idempotency key; reuse that key when retrying the same intended send.
+Never guess a target UUID, bot UUID, or person/group target ID. Treat sends and
+configuration changes as writes, and never request or expose API keys or
+messaging-platform credentials.
 
 New bots default to `routing_mode=routes_only`: unmatched inbound messages do
 not enter an Agent pipeline. Only set `fallback_default` when the operator
@@ -145,7 +146,47 @@ class LangBotMCPServer:
 
         @mcp.tool(
             description=(
-                'Send a message through one messaging-platform bot to one person or group. '
+                'List reusable notification targets managed by the operator. '
+                'Use these target UUIDs with `send_notification`; never guess them.'
+            )
+        )
+        async def list_notification_targets(offset: int = 0, limit: int = 50) -> str:
+            context = _authorized(Permission.RESOURCE_VIEW)
+            return _dump(await ap.notification_service.list_targets(context, offset=offset, limit=limit))
+
+        @mcp.tool(
+            description=(
+                'Send one message to one or more managed notification target UUIDs. '
+                'Use a stable idempotency key for the intended event and reuse it on retries; '
+                'the same key cannot be reused with different targets or content. '
+                '`message_chain` is a non-empty LangBot chain such as '
+                '[{"type":"Plain","text":"Service restored"}].'
+            )
+        )
+        async def send_notification(
+            target_ids: list[str],
+            message_chain: list[dict[str, typing.Any]],
+            idempotency_key: str,
+        ) -> str:
+            context = _authorized(Permission.RUNTIME_OPERATE)
+            return _dump(
+                await ap.notification_service.send_notification(
+                    context,
+                    target_ids,
+                    message_chain,
+                    idempotency_key,
+                )
+            )
+
+        @mcp.tool(description='Get a durable notification job and every per-target delivery outcome.')
+        async def get_notification_job(job_uuid: str) -> str:
+            context = _authorized(Permission.RESOURCE_VIEW)
+            return _dump(await ap.notification_service.get_job(context, job_uuid))
+
+        @mcp.tool(
+            description=(
+                'Send directly through one bot to an unmanaged person or group. '
+                'Prefer managed notification targets for repeatable automation. '
                 'Discover the bot UUID with `list_bots`; never guess target IDs. '
                 '`message_chain` matches the existing LangBot message-chain JSON array.'
             )

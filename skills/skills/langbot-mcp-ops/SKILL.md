@@ -76,7 +76,9 @@ The tools wrap the LangBot service layer. Current tools (v1):
 | --- | --- |
 | `get_system_info` | Version, edition, instance id |
 | `list_bots` / `get_bot` / `create_bot` / `update_bot` / `delete_bot` | Manage messaging-platform bots (secrets redacted on read) |
-| `send_message` | Send one message through a selected bot to one person or group |
+| `list_notification_targets` | List operator-managed people and groups that are safe to select by UUID |
+| `send_notification` / `get_notification_job` | Send to one or more managed targets idempotently and inspect every outcome |
+| `send_message` | Send directly through a selected bot to one unmanaged person or group |
 | `list_pipelines` / `get_pipeline` / `create_pipeline` / `update_pipeline` / `delete_pipeline` | Manage pipelines |
 | `list_llm_models` / `get_llm_model` / `list_embedding_models` / `list_model_providers` | Inspect models & providers |
 | `list_knowledge_bases` / `get_knowledge_base` / `retrieve_knowledge_base` | RAG knowledge bases (incl. semantic search) |
@@ -89,7 +91,20 @@ shape as the corresponding HTTP API request body. Discover resources with the
 `resource.view`; mutations require `resource.manage`. All service calls inherit
 the immutable Workspace context authenticated at the MCP transport boundary.
 
-`send_message` is a write and requires `runtime.operate`. Its arguments are:
+Prefer managed notifications for recurring automation. First call
+`list_notification_targets`, then call `send_notification` with:
+
+- `target_ids`: one or more discovered target UUIDs (maximum 100, no duplicates);
+- `message_chain`: a non-empty LangBot message-chain JSON array, for example
+  `[{"type":"Plain","text":"Service restored"}]`;
+- `idempotency_key`: a stable caller-generated key for this intended event.
+  Reuse it when retrying the same request. Reusing it with different targets or
+  content is rejected.
+
+`send_notification` is a write and requires `runtime.operate`; target discovery
+and `get_notification_job` require `resource.view`. A result has an overall
+status plus one `sent` or `failed` outcome per target. The direct `send_message`
+tool remains available for one-off unmanaged destinations. Its arguments are:
 
 - `bot_uuid`: an existing bot UUID discovered with `list_bots`;
 - `target_type`: exactly `person` or `group`;
@@ -123,8 +138,11 @@ Bot inbound routing is explicit:
 3. Call `get_system_info` to confirm connectivity.
 4. Use `list_*` tools to discover, then `get_*` / `create_*` / `update_*` /
    `delete_*` as needed.
-5. To send a notification, call `list_bots`, select an existing bot, verify the
-   operator-supplied person/group target ID, then call `send_message`.
+5. To send a notification, call `list_notification_targets`, select only
+   operator-managed target UUIDs, then call `send_notification` with a stable
+   idempotency key. Use `get_notification_job` to inspect delivery outcomes.
+6. Use `list_bots` plus `send_message` only when the operator explicitly needs
+   a one-off destination that is not yet managed.
 
 ## Implementation & maintenance (for LangBot developers)
 

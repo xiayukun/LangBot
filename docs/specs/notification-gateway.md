@@ -123,12 +123,9 @@ Content-Type: application/json
 
 {
   "targetIds": ["target-uuid-1", "target-uuid-2"],
-  "messageChain": {
-    "type": "MessageChain",
-    "chain": [
-      {"type": "Plain", "text": "Service restored"}
-    ]
-  }
+  "messageChain": [
+    {"type": "Plain", "text": "Service restored"}
+  ]
 }
 ```
 
@@ -138,10 +135,13 @@ All errors follow LangBot's existing structured API envelope. Authentication use
 
 ### MCP tools
 
-The first MCP slice adds:
+The MCP notification surface includes:
 
 - `send_message`: send through one bot to one person or group, matching the existing HTTP operation.
-- Later slices add `list_notification_targets`, `send_notification`, `get_notification_job`, and route inspection tools after their shared services exist.
+- `list_notification_targets`: discover reusable destinations configured by the operator.
+- `send_notification`: idempotently fan out one message to one or more managed targets.
+- `get_notification_job`: inspect the durable per-target outcomes.
+- Route inspection tools remain deferred until the durable Agent connector slice.
 
 MCP tools never accept or return Feishu application secrets.
 
@@ -285,9 +285,9 @@ Trust boundaries are HTTP/MCP requests, Feishu events, Agent connector responses
 
 ### Slice 3: Managed targets and multi-target notifications
 
-- [ ] Add target and notification job/attempt entities with idempotency constraints.
-- [ ] Add target CRUD and paginated listing.
-- [ ] Add asynchronous fan-out using the existing runtime adapters with bounded concurrency.
+- [x] Add target and notification job/attempt entities with idempotency constraints.
+- [x] Add target CRUD and paginated listing.
+- [x] Add asynchronous fan-out using the existing runtime adapters with bounded concurrency.
 - [ ] Add HTTP and matching MCP operations plus test-send UI.
 - Verification: unit, API, persistence, MCP, and failure/retry tests.
 

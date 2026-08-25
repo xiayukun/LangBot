@@ -33,13 +33,77 @@ def _request_context(*permissions: Permission) -> RequestContext:
 
 
 def _application() -> SimpleNamespace:
-    return SimpleNamespace(bot_service=SimpleNamespace(send_message=AsyncMock()))
+    return SimpleNamespace(
+        bot_service=SimpleNamespace(send_message=AsyncMock()),
+        notification_service=SimpleNamespace(
+            list_targets=AsyncMock(
+                return_value={
+                    'targets': [{'uuid': 'target-test', 'name': 'Ops group'}],
+                    'total': 1,
+                    'offset': 0,
+                    'limit': 50,
+                }
+            ),
+            send_notification=AsyncMock(
+                return_value={
+                    'uuid': 'job-test',
+                    'status': 'succeeded',
+                    'replayed': False,
+                    'outcomes': [{'target_uuid': 'target-test', 'status': 'sent'}],
+                }
+            ),
+            get_job=AsyncMock(return_value={'uuid': 'job-test', 'status': 'succeeded'}),
+        ),
+    )
 
 
 def test_server_instructions_explain_the_safe_notification_workflow() -> None:
-    assert 'send_message' in INSTRUCTIONS
-    assert 'list_bots' in INSTRUCTIONS
+    assert 'send_notification' in INSTRUCTIONS
+    assert 'list_notification_targets' in INSTRUCTIONS
     assert 'Never guess' in INSTRUCTIONS
+
+
+@pytest.mark.asyncio
+async def test_managed_notification_tools_are_discoverable_and_delegate_to_service() -> None:
+    application = _application()
+    server = LangBotMCPServer(application)
+    context = _request_context(Permission.RESOURCE_VIEW, Permission.RUNTIME_OPERATE)
+    tools = await server.mcp.list_tools()
+    tool_names = {tool.name for tool in tools}
+    assert {'list_notification_targets', 'send_notification', 'get_notification_job'} <= tool_names
+
+    token = bind_request_context(context)
+    try:
+        list_result = await server.mcp.call_tool(
+            'list_notification_targets',
+            {'offset': 0, 'limit': 50},
+        )
+        send_result = await server.mcp.call_tool(
+            'send_notification',
+            {
+                'target_ids': ['target-test'],
+                'message_chain': [{'type': 'Plain', 'text': 'Service restored'}],
+                'idempotency_key': 'deploy-2026-08-25',
+            },
+        )
+        get_result = await server.mcp.call_tool(
+            'get_notification_job',
+            {'job_uuid': 'job-test'},
+        )
+    finally:
+        reset_request_context(token)
+
+    application.notification_service.list_targets.assert_awaited_once_with(context, offset=0, limit=50)
+    application.notification_service.send_notification.assert_awaited_once_with(
+        context,
+        ['target-test'],
+        [{'type': 'Plain', 'text': 'Service restored'}],
+        'deploy-2026-08-25',
+    )
+    application.notification_service.get_job.assert_awaited_once_with(context, 'job-test')
+    assert json.loads(list_result[0][0].text)['total'] == 1
+    assert json.loads(send_result[0][0].text)['uuid'] == 'job-test'
+    assert json.loads(get_result[0][0].text)['status'] == 'succeeded'
 
 
 @pytest.mark.asyncio
