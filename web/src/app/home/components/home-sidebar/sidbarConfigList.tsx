@@ -9,6 +9,7 @@ import {
   Puzzle,
   PlusCircle,
   BellRing,
+  Cable,
 } from 'lucide-react';
 
 const t = (key: string) => {
@@ -62,6 +63,18 @@ export const sidebarConfigList = [
     icon: <BellRing className="text-blue-500" />,
     route: '/home/notifications',
     description: t('notifications.description'),
+    helpLink: {
+      en_US: '',
+      zh_Hans: '',
+    },
+    section: 'home',
+  }),
+  new SidebarChildVO({
+    id: 'agent-connectors',
+    name: t('agentConnectors.title'),
+    icon: <Cable className="text-blue-500" />,
+    route: '/home/agent-connectors',
+    description: t('agentConnectors.description'),
     helpLink: {
       en_US: '',
       zh_Hans: '',

@@ -14,7 +14,7 @@ import { UUID } from 'uuidjs';
 import DynamicFormComponent from '@/app/home/components/dynamic-form/DynamicFormComponent';
 import { httpClient } from '@/app/infra/http/HttpClient';
 import { systemInfo } from '@/app/infra/http';
-import { Bot } from '@/app/infra/entities/api';
+import { AgentConnector, Bot } from '@/app/infra/entities/api';
 import { getAdapterDocUrl } from '@/app/infra/entities/adapter-docs';
 import { ExternalLink } from 'lucide-react';
 import RoutingRulesEditor from './RoutingRulesEditor';
@@ -69,25 +69,33 @@ const getFormSchema = (t: (key: string) => string) =>
     routing_mode: z.enum(['routes_only', 'fallback_default']),
     pipeline_routing_rules: z
       .array(
-        z.object({
-          type: z.enum([
-            'launcher_type',
-            'launcher_id',
-            'message_content',
-            'message_has_element',
-          ]),
-          operator: z.enum([
-            'eq',
-            'neq',
-            'contains',
-            'not_contains',
-            'starts_with',
-            'regex',
-          ]),
-          value: z.string(),
-          pipeline_uuid: z.string(),
-          group_trigger: z.enum(['mention', 'all']).optional(),
-        }),
+        z
+          .object({
+            type: z.enum([
+              'launcher_type',
+              'launcher_id',
+              'message_content',
+              'message_has_element',
+            ]),
+            operator: z.enum([
+              'eq',
+              'neq',
+              'contains',
+              'not_contains',
+              'starts_with',
+              'regex',
+            ]),
+            value: z.string(),
+            pipeline_uuid: z.string().optional(),
+            agent_connector_uuid: z.string().optional(),
+            group_trigger: z.enum(['mention', 'all']).optional(),
+          })
+          .refine(
+            (rule) =>
+              Boolean(rule.pipeline_uuid) !==
+              Boolean(rule.agent_connector_uuid),
+            { message: t('bots.routeDestinationRequired') },
+          ),
       )
       .optional(),
   });
@@ -141,6 +149,7 @@ export default function BotForm({
   const [pipelineNameList, setPipelineNameList] = useState<IPipelineEntity[]>(
     [],
   );
+  const [agentConnectors, setAgentConnectors] = useState<AgentConnector[]>([]);
 
   const [dynamicFormConfigList, setDynamicFormConfigList] = useState<
     IDynamicFormItemSchema[]
@@ -220,7 +229,11 @@ export default function BotForm({
   }
 
   async function initBotFormComponent() {
-    const pipelinesRes = await httpClient.getPipelines();
+    const [pipelinesRes, connectorsRes, adaptersRes] = await Promise.all([
+      httpClient.getPipelines(),
+      httpClient.getAgentConnectors(),
+      httpClient.getAdapters(),
+    ]);
     setPipelineNameList(
       pipelinesRes.pipelines.map((item) => {
         return {
@@ -230,8 +243,8 @@ export default function BotForm({
         };
       }),
     );
+    setAgentConnectors(connectorsRes.connectors);
 
-    const adaptersRes = await httpClient.getAdapters();
     setAdapterNameList(
       adaptersRes.adapters.map((item) => {
         return {
@@ -555,6 +568,7 @@ export default function BotForm({
                 <RoutingRulesEditor
                   form={form}
                   pipelineNameList={pipelineNameList}
+                  agentConnectors={agentConnectors}
                 />
               </CardContent>
             </Card>

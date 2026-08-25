@@ -219,6 +219,76 @@ export interface Bot {
   adapter_runtime_values?: object;
 }
 
+export type AgentConnectorKind = 'http' | 'codex_bridge';
+
+export interface AgentConnector {
+  uuid: string;
+  name: string;
+  kind: AgentConnectorKind;
+  endpoint_url: string;
+  system_prompt: string;
+  skill_names: string[];
+  enabled: boolean;
+  timeout_seconds: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type AgentConnectorInput = Omit<
+  AgentConnector,
+  'uuid' | 'created_at' | 'updated_at'
+>;
+
+export interface ApiRespAgentConnectors {
+  connectors: AgentConnector[];
+}
+
+export interface ApiRespAgentConnector {
+  connector: AgentConnector;
+}
+
+export interface AgentConversationSummary {
+  uuid: string;
+  connector_uuid: string;
+  connector_name?: string;
+  bot_uuid: string;
+  launcher_type: 'person' | 'group';
+  launcher_id: string;
+  message_count: number;
+  cursor_message_id?: number;
+  last_message_at?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AgentHistoryMessage {
+  id: number;
+  role: 'user' | 'assistant';
+  sender_id?: string;
+  message_chain: Array<Record<string, unknown>>;
+  created_at?: string;
+}
+
+export interface AgentInvocationAudit {
+  uuid: string;
+  through_message_id: number;
+  reply_message_id?: number;
+  status: string;
+  error?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ApiRespAgentConversations {
+  conversations: AgentConversationSummary[];
+}
+
+export interface ApiRespAgentConversationHistory {
+  conversation: AgentConversationSummary;
+  messages: AgentHistoryMessage[];
+  invocations: AgentInvocationAudit[];
+}
+
 export type NotificationTargetType = 'person' | 'group';
 
 export interface NotificationTarget {
@@ -289,7 +359,8 @@ export interface PipelineRoutingRule {
     | 'message_has_element';
   operator: RoutingRuleOperator;
   value: string;
-  pipeline_uuid: string;
+  pipeline_uuid?: string;
+  agent_connector_uuid?: string;
   group_trigger?: 'mention' | 'all';
 }
 

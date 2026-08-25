@@ -16,6 +16,11 @@ import {
   ApiRespNotificationTarget,
   ApiRespNotificationJob,
   NotificationTargetInput,
+  ApiRespAgentConnectors,
+  ApiRespAgentConnector,
+  AgentConnectorInput,
+  ApiRespAgentConversations,
+  ApiRespAgentConversationHistory,
   ApiRespPlugins,
   ApiRespPlugin,
   ApiRespPluginConfig,
@@ -435,6 +440,46 @@ export class BackendClient extends BaseHttpClient {
 
   public deleteBot(uuid: string): Promise<object> {
     return this.delete(`/api/v1/platform/bots/${uuid}`);
+  }
+
+  // ============ Agent Connectors ============
+  public getAgentConnectors(): Promise<ApiRespAgentConnectors> {
+    return this.get('/api/v1/agent-connectors');
+  }
+
+  public createAgentConnector(
+    connector: AgentConnectorInput,
+  ): Promise<ApiRespAgentConnector> {
+    return this.post('/api/v1/agent-connectors', connector);
+  }
+
+  public updateAgentConnector(
+    uuid: string,
+    connector: Partial<AgentConnectorInput>,
+  ): Promise<ApiRespAgentConnector> {
+    return this.put(`/api/v1/agent-connectors/${uuid}`, connector);
+  }
+
+  public deleteAgentConnector(uuid: string): Promise<object> {
+    return this.delete(`/api/v1/agent-connectors/${uuid}`);
+  }
+
+  public getAgentConversations(
+    limit: number = 100,
+  ): Promise<ApiRespAgentConversations> {
+    return this.get('/api/v1/agent-connectors/history/conversations', {
+      limit,
+    });
+  }
+
+  public getAgentConversationHistory(
+    conversationUuid: string,
+    limit: number = 100,
+  ): Promise<ApiRespAgentConversationHistory> {
+    return this.get(
+      `/api/v1/agent-connectors/history/conversations/${conversationUuid}`,
+      { limit },
+    );
   }
 
   // ============ Managed Notifications ============

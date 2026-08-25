@@ -17,6 +17,7 @@ import HomePage from '@/app/home/page';
 import MonitoringPage from '@/app/home/monitoring/page';
 import BotsPage from '@/app/home/bots/page';
 import NotificationsPage from '@/app/home/notifications/page';
+import AgentConnectorsPage from '@/app/home/agent-connectors/page';
 import PipelinesPage from '@/app/home/pipelines/page';
 import PluginsPage from '@/app/home/plugins/page';
 import AddExtensionPage from '@/app/home/add-extension/page';
@@ -121,6 +122,16 @@ export const router = createBrowserRouter([
           <Suspense fallback={<Loading />}>
             <HomeLayout>
               <NotificationsPage />
+            </HomeLayout>
+          </Suspense>
+        ),
+      },
+      {
+        path: '/home/agent-connectors',
+        element: (
+          <Suspense fallback={<Loading />}>
+            <HomeLayout>
+              <AgentConnectorsPage />
             </HomeLayout>
           </Suspense>
         ),

@@ -296,11 +296,14 @@ Trust boundaries are HTTP/MCP requests, Feishu events, Agent connector responses
 
 ### Slice 4: Agent connectors and durable context
 
-- [ ] Add connector, conversation transcript, and connector cursor entities.
-- [ ] Implement HTTP webhook connector first; integrate Codex through the same connector boundary.
-- [ ] Inject bounded recent/unseen history and allowed skill instructions.
-- [ ] Add connector and route administration UI plus audit/history views.
-- Verification: cursor/idempotency tests, prompt-injection boundaries, connector timeout/retry tests, end-to-end route test.
+- [x] Add connector, conversation transcript, and connector cursor entities.
+- [x] Implement HTTP webhook connector first; integrate Codex through the same connector boundary.
+- [x] Inject bounded recent/unseen history and allowed skill instructions.
+- [x] Add connector and route administration UI plus audit/history views.
+- Verification: accepted/rejected cursor and duplicate-event tests; timeout-then-retry and prompt-injection-boundary
+  tests; Feishu-shaped event-ID extraction and an end-to-end runtime-route/connector/reply test; authenticated HTTP
+  controller tests; SQLite migration tests; frontend unit tests, targeted ESLint, and a production build. Browser-surface
+  verification remains pending because this Codex environment exposes no registered Browser or Chrome runtime tool.
 
 ## Success criteria
 

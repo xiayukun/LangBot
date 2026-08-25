@@ -65,6 +65,10 @@ const HOME_TITLE_KEYS: { match: (path: string) => boolean; key: string }[] = [
     match: (p) => p.startsWith('/home/notifications'),
     key: 'notifications.title',
   },
+  {
+    match: (p) => p.startsWith('/home/agent-connectors'),
+    key: 'agentConnectors.title',
+  },
   { match: (p) => p.startsWith('/home/pipelines'), key: 'pipelines.title' },
   {
     match: (p) => p.startsWith('/home/add-extension'),

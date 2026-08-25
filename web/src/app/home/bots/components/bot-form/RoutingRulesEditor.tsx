@@ -3,10 +3,11 @@
 import { useTranslation } from 'react-i18next';
 import { UseFormReturn } from 'react-hook-form';
 import {
+  AgentConnector,
   PipelineRoutingRule,
   RoutingRuleOperator,
 } from '@/app/infra/entities/api';
-import { Ban, GripVertical, Plus, Trash2 } from 'lucide-react';
+import { Ban, Bot, GripVertical, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormLabel } from '@/components/ui/form';
@@ -50,6 +51,7 @@ interface PipelineOption {
 interface RoutingRulesEditorProps {
   form: UseFormReturn<any>;
   pipelineNameList: PipelineOption[];
+  agentConnectors: AgentConnector[];
 }
 
 const OPERATORS_BY_TYPE: Record<
@@ -99,6 +101,7 @@ interface RuleRowContentProps {
   rule: PipelineRoutingRule;
   index: number;
   pipelineNameList: PipelineOption[];
+  agentConnectors: AgentConnector[];
   updateRule: (index: number, patch: Partial<PipelineRoutingRule>) => void;
   removeRule: (index: number) => void;
   dragHandleProps?: Record<string, unknown>;
@@ -109,6 +112,7 @@ function RuleRowContent({
   rule,
   index,
   pipelineNameList,
+  agentConnectors,
   updateRule,
   removeRule,
   dragHandleProps,
@@ -118,6 +122,14 @@ function RuleRowContent({
   const operatorsForType =
     OPERATORS_BY_TYPE[rule.type] || OPERATORS_BY_TYPE.message_content;
   const isDiscard = rule.pipeline_uuid === PIPELINE_DISCARD;
+  const destinationValue = rule.agent_connector_uuid
+    ? `agent:${rule.agent_connector_uuid}`
+    : rule.pipeline_uuid
+      ? `pipeline:${rule.pipeline_uuid}`
+      : '';
+  const selectedConnector = agentConnectors.find(
+    (connector) => connector.uuid === rule.agent_connector_uuid,
+  );
 
   return (
     <div
@@ -251,13 +263,33 @@ function RuleRowContent({
 
       <span className="text-sm text-muted-foreground shrink-0">→</span>
 
-      {/* Pipeline selector */}
+      {/* Route destination selector */}
       <Select
-        value={rule.pipeline_uuid}
-        onValueChange={(val) => updateRule(index, { pipeline_uuid: val })}
+        value={destinationValue}
+        onValueChange={(val) =>
+          updateRule(
+            index,
+            val.startsWith('agent:')
+              ? {
+                  agent_connector_uuid: val.slice('agent:'.length),
+                  pipeline_uuid: undefined,
+                }
+              : {
+                  pipeline_uuid: val.slice('pipeline:'.length),
+                  agent_connector_uuid: undefined,
+                },
+          )
+        }
       >
         <SelectTrigger className="w-[200px]">
-          {rule.pipeline_uuid ? (
+          {rule.agent_connector_uuid ? (
+            <div className="flex items-center gap-2">
+              <Bot className="h-3.5 w-3.5 shrink-0 text-blue-500" />
+              <span>
+                {selectedConnector?.name ?? rule.agent_connector_uuid}
+              </span>
+            </div>
+          ) : rule.pipeline_uuid ? (
             isDiscard ? (
               <div className="flex items-center gap-2 text-destructive">
                 <Ban className="h-3.5 w-3.5 shrink-0" />
@@ -279,11 +311,11 @@ function RuleRowContent({
               })()
             )
           ) : (
-            <SelectValue placeholder={t('bots.selectPipeline')} />
+            <SelectValue placeholder={t('bots.selectRouteDestination')} />
           )}
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={PIPELINE_DISCARD}>
+          <SelectItem value={`pipeline:${PIPELINE_DISCARD}`}>
             <div className="flex items-center gap-2 text-destructive">
               <Ban className="h-3.5 w-3.5 shrink-0" />
               <span>{t('bots.pipelineDiscard')}</span>
@@ -291,12 +323,28 @@ function RuleRowContent({
           </SelectItem>
           <SelectSeparator />
           {pipelineNameList.map((item) => (
-            <SelectItem key={item.value} value={item.value}>
+            <SelectItem
+              key={`pipeline:${item.value}`}
+              value={`pipeline:${item.value}`}
+            >
               <div className="flex items-center gap-2">
                 {item.emoji && (
                   <span className="text-sm shrink-0">{item.emoji}</span>
                 )}
                 <span>{item.label}</span>
+              </div>
+            </SelectItem>
+          ))}
+          {agentConnectors.length > 0 && <SelectSeparator />}
+          {agentConnectors.map((connector) => (
+            <SelectItem
+              key={`agent:${connector.uuid}`}
+              value={`agent:${connector.uuid}`}
+              disabled={!connector.enabled}
+            >
+              <div className="flex items-center gap-2">
+                <Bot className="h-3.5 w-3.5 text-blue-500" />
+                <span>{connector.name}</span>
               </div>
             </SelectItem>
           ))}
@@ -323,6 +371,7 @@ interface SortableRuleRowProps {
   rule: PipelineRoutingRule;
   index: number;
   pipelineNameList: PipelineOption[];
+  agentConnectors: AgentConnector[];
   updateRule: (index: number, patch: Partial<PipelineRoutingRule>) => void;
   removeRule: (index: number) => void;
 }
@@ -332,6 +381,7 @@ function SortableRuleRow({
   rule,
   index,
   pipelineNameList,
+  agentConnectors,
   updateRule,
   removeRule,
 }: SortableRuleRowProps) {
@@ -352,6 +402,7 @@ function SortableRuleRow({
         rule={rule}
         index={index}
         pipelineNameList={pipelineNameList}
+        agentConnectors={agentConnectors}
         updateRule={updateRule}
         removeRule={removeRule}
         dragHandleProps={{ ...attributes, ...listeners }}
@@ -365,6 +416,7 @@ function SortableRuleRow({
 export default function RoutingRulesEditor({
   form,
   pipelineNameList,
+  agentConnectors,
 }: RoutingRulesEditorProps) {
   const { t } = useTranslation();
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -479,6 +531,7 @@ export default function RoutingRulesEditor({
               rule={rule}
               index={index}
               pipelineNameList={pipelineNameList}
+              agentConnectors={agentConnectors}
               updateRule={updateRule}
               removeRule={removeRule}
             />
@@ -490,6 +543,7 @@ export default function RoutingRulesEditor({
               rule={activeRule}
               index={activeIndex}
               pipelineNameList={pipelineNameList}
+              agentConnectors={agentConnectors}
               updateRule={updateRule}
               removeRule={removeRule}
               isOverlay
