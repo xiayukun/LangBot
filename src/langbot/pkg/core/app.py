@@ -29,6 +29,7 @@ from ..api.http.service import provider as provider_service
 from ..api.http.service import pipeline as pipeline_service
 from ..api.http.service import bot as bot_service
 from ..api.http.service import notification as notification_service
+from ..api.http.service import agent_connector as agent_connector_service
 from ..api.http.service import knowledge as knowledge_service
 from ..api.http.service import mcp as mcp_service
 from ..api.http.service import apikey as apikey_service
@@ -177,6 +178,8 @@ class Application:
     bot_service: bot_service.BotService = None
 
     notification_service: notification_service.NotificationService = None
+
+    agent_connector_service: agent_connector_service.AgentConnectorService = None
 
     knowledge_service: knowledge_service.KnowledgeService = None
 

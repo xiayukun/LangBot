@@ -108,6 +108,44 @@ class TestResolvePipelineUuid:
         assert uuid == 'group-pipeline'
         assert routed is True
 
+    def test_routes_only_can_target_an_agent_connector(self):
+        from langbot.pkg.platform.botmgr import RuntimeBot
+
+        bot = self._make_bot(
+            None,
+            [
+                {
+                    'type': 'launcher_type',
+                    'operator': 'eq',
+                    'value': 'person',
+                    'agent_connector_uuid': 'connector-1',
+                }
+            ],
+            routing_mode='routes_only',
+        )
+
+        target, routed = bot.resolve_pipeline_uuid('person', '123', 'hi')
+
+        assert target == RuntimeBot.agent_connector_route('connector-1')
+        assert routed is True
+
+    def test_rule_with_two_destinations_fails_closed(self):
+        bot = self._make_bot(
+            None,
+            [
+                {
+                    'type': 'launcher_type',
+                    'operator': 'eq',
+                    'value': 'person',
+                    'pipeline_uuid': 'pipeline-1',
+                    'agent_connector_uuid': 'connector-1',
+                }
+            ],
+            routing_mode='routes_only',
+        )
+
+        assert bot.resolve_pipeline_uuid('person', '123', 'hi') == (None, False)
+
     def test_legacy_entity_without_routing_mode_keeps_fallback(self):
         from langbot.pkg.platform.botmgr import RuntimeBot
 

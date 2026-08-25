@@ -23,6 +23,7 @@ from ...api.http.service import provider as provider_service
 from ...api.http.service import pipeline as pipeline_service
 from ...api.http.service import bot as bot_service
 from ...api.http.service import notification as notification_service
+from ...api.http.service import agent_connector as agent_connector_service
 from ...api.http.service import knowledge as knowledge_service
 from ...api.http.service import mcp as mcp_service
 from ...api.http.service import apikey as apikey_service
@@ -118,6 +119,9 @@ class BuildAppStage(stage.BootingStage):
 
         notification_service_inst = notification_service.NotificationService(ap)
         ap.notification_service = notification_service_inst
+
+        agent_connector_service_inst = agent_connector_service.AgentConnectorService(ap)
+        ap.agent_connector_service = agent_connector_service_inst
 
         knowledge_service_inst = knowledge_service.KnowledgeService(ap)
         ap.knowledge_service = knowledge_service_inst

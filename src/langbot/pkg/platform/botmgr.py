@@ -120,6 +120,18 @@ class RuntimeBot:
     PIPELINE_DISCARD_DISPLAY_NAME = 'Discarded'
     PIPELINE_UNROUTED = '__unrouted__'
     PIPELINE_UNROUTED_DISPLAY_NAME = 'Unrouted'
+    AGENT_CONNECTOR_PREFIX = '__agent_connector__:'
+
+    @classmethod
+    def agent_connector_route(cls, connector_uuid: str) -> str:
+        return f'{cls.AGENT_CONNECTOR_PREFIX}{connector_uuid}'
+
+    @classmethod
+    def parse_agent_connector_route(cls, route_target: str | None) -> str | None:
+        if not route_target or not route_target.startswith(cls.AGENT_CONNECTOR_PREFIX):
+            return None
+        connector_uuid = route_target.removeprefix(cls.AGENT_CONNECTOR_PREFIX).strip()
+        return connector_uuid or None
 
     def resolve_pipeline_uuid(
         self,
@@ -161,9 +173,11 @@ class RuntimeBot:
             rule_type = rule.get('type')
             operator = rule.get('operator', 'eq')
             rule_value = rule.get('value', '')
-            target_uuid = rule.get('pipeline_uuid')
-            if not rule_type or not target_uuid:
+            pipeline_uuid = rule.get('pipeline_uuid')
+            connector_uuid = rule.get('agent_connector_uuid')
+            if not rule_type or bool(pipeline_uuid) == bool(connector_uuid):
                 continue
+            target_uuid = self.agent_connector_route(str(connector_uuid)) if connector_uuid else str(pipeline_uuid)
 
             if launcher_type == 'group':
                 group_trigger = rule.get('group_trigger', 'all')
@@ -196,6 +210,67 @@ class RuntimeBot:
         if routing_mode != persistence_bot.ROUTING_MODE_FALLBACK_DEFAULT:
             return None, False
         return self.bot_entity.use_pipeline_uuid, False
+
+    @staticmethod
+    def _source_event_id(event: platform_events.MessageEvent) -> str:
+        """Return a stable platform event ID when available.
+
+        Feishu stores the message ID at ``source.event.message.message_id``.
+        Other adapters expose one of the shallower fields below. A random ID is
+        deliberately used as the final fallback: it avoids collapsing two
+        legitimate identical messages when an adapter exposes no stable ID.
+        """
+
+        source = getattr(event, 'source_platform_object', None)
+        candidates = [
+            getattr(event, 'message_id', None),
+            getattr(source, 'message_id', None),
+            getattr(source, 'event_id', None),
+            getattr(source, 'id', None),
+        ]
+        source_event = getattr(source, 'event', None)
+        source_message = getattr(source_event, 'message', None)
+        candidates.extend(
+            [
+                getattr(source_event, 'event_id', None),
+                getattr(source_message, 'message_id', None),
+                getattr(source_message, 'id', None),
+            ]
+        )
+        for candidate in candidates:
+            if candidate is not None and str(candidate).strip():
+                return str(candidate).strip()
+        return f'generated:{uuid.uuid4()}'
+
+    async def _handle_agent_connector_route(
+        self,
+        *,
+        connector_uuid: str,
+        launcher_type: str,
+        launcher_id: str | int,
+        sender_id: str | int,
+        event: platform_events.MessageEvent,
+        adapter: abstract_platform_adapter.AbstractMessagePlatformAdapter,
+    ) -> None:
+        message_chain = event.message_chain.model_dump()
+        if not isinstance(message_chain, list):
+            raise ValueError('Agent connector requires a serializable message chain')
+        try:
+            await self.ap.agent_connector_service.handle_inbound(
+                self.execution_context,
+                connector_uuid=connector_uuid,
+                bot_uuid=self.bot_entity.uuid,
+                launcher_type=launcher_type,
+                launcher_id=str(launcher_id),
+                sender_id=str(sender_id),
+                message_chain=message_chain,
+                source_event_id=self._source_event_id(event),
+                adapter=adapter,
+            )
+        except Exception as exc:
+            # The service durably records invocation failures. Never fall back to
+            # another pipeline: a configured route remains the sole destination.
+            await self.logger.error(f'Agent connector {connector_uuid} failed for {launcher_type} {launcher_id}: {exc}')
 
     def resolve_event_pipeline_uuid(
         self,
@@ -401,6 +476,18 @@ class RuntimeBot:
                     )
                     return
 
+                agent_connector_uuid = self.parse_agent_connector_route(pipeline_uuid)
+                if agent_connector_uuid is not None:
+                    await self._handle_agent_connector_route(
+                        connector_uuid=agent_connector_uuid,
+                        launcher_type='person',
+                        launcher_id=launcher_id,
+                        sender_id=event.sender.id,
+                        event=event,
+                        adapter=adapter,
+                    )
+                    return
+
                 if pipeline_uuid is None:
                     await self.logger.info('Person message did not match a configured route')
                     await self._record_unrouted_message(
@@ -485,6 +572,18 @@ class RuntimeBot:
                         event.sender.id,
                         event,
                         event.message_chain,
+                    )
+                    return
+
+                agent_connector_uuid = self.parse_agent_connector_route(pipeline_uuid)
+                if agent_connector_uuid is not None:
+                    await self._handle_agent_connector_route(
+                        connector_uuid=agent_connector_uuid,
+                        launcher_type='group',
+                        launcher_id=launcher_id,
+                        sender_id=event.sender.id,
+                        event=event,
+                        adapter=adapter,
                     )
                     return
 

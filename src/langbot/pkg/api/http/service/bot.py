@@ -5,6 +5,7 @@ import sqlalchemy
 
 from ....core import app
 from ....entity.persistence import bot as persistence_bot
+from ....entity.persistence import agent_connector as persistence_agent
 from ....entity.persistence import pipeline as persistence_pipeline
 from ....workspace.errors import WorkspaceNotFoundError
 from .tenant import TenantContext, require_workspace_uuid, scope_statement
@@ -17,6 +18,59 @@ class BotService:
 
     def __init__(self, ap: app.Application) -> None:
         self.ap = ap
+
+    async def _validate_routing_rules(self, context: TenantContext, rules: object) -> list[dict]:
+        """Validate route destinations and their Workspace ownership."""
+
+        if not isinstance(rules, list) or len(rules) > 100:
+            raise ValueError('pipeline_routing_rules must be an array with at most 100 items')
+        connector_uuids: set[str] = set()
+        pipeline_uuids: set[str] = set()
+        for index, rule in enumerate(rules):
+            if not isinstance(rule, dict):
+                raise ValueError(f'Routing rule {index + 1} must be an object')
+            pipeline_uuid = rule.get('pipeline_uuid')
+            connector_uuid = rule.get('agent_connector_uuid')
+            if bool(pipeline_uuid) == bool(connector_uuid):
+                raise ValueError(f'Routing rule {index + 1} must select exactly one pipeline or Agent connector')
+            if pipeline_uuid:
+                if not isinstance(pipeline_uuid, str):
+                    raise ValueError(f'Routing rule {index + 1} pipeline_uuid must be a string')
+                if pipeline_uuid != '__discard__':
+                    pipeline_uuids.add(pipeline_uuid)
+            if connector_uuid:
+                if not isinstance(connector_uuid, str):
+                    raise ValueError(f'Routing rule {index + 1} agent_connector_uuid must be a string')
+                connector_uuids.add(connector_uuid)
+
+        if pipeline_uuids:
+            result = await self.ap.persistence_mgr.execute_async(
+                scope_statement(
+                    sqlalchemy.select(persistence_pipeline.LegacyPipeline.uuid).where(
+                        persistence_pipeline.LegacyPipeline.uuid.in_(pipeline_uuids)
+                    ),
+                    persistence_pipeline.LegacyPipeline,
+                    context,
+                )
+            )
+            found = {row[0] for row in result.all()}
+            if missing := pipeline_uuids - found:
+                raise WorkspaceNotFoundError(f'Routing pipeline not found: {sorted(missing)[0]}')
+
+        if connector_uuids:
+            result = await self.ap.persistence_mgr.execute_async(
+                scope_statement(
+                    sqlalchemy.select(persistence_agent.AgentConnector.uuid).where(
+                        persistence_agent.AgentConnector.uuid.in_(connector_uuids)
+                    ),
+                    persistence_agent.AgentConnector,
+                    context,
+                )
+            )
+            found = {row[0] for row in result.all()}
+            if missing := connector_uuids - found:
+                raise WorkspaceNotFoundError(f'Agent connector not found: {sorted(missing)[0]}')
+        return rules
 
     async def get_bots(self, context: TenantContext, include_secret: bool = False) -> list[dict]:
         """获取所有机器人"""
@@ -116,6 +170,10 @@ class BotService:
         routing_mode = bot_data.setdefault('routing_mode', persistence_bot.ROUTING_MODE_ROUTES_ONLY)
         if routing_mode not in persistence_bot.ROUTING_MODES:
             raise ValueError(f'Invalid routing_mode: {routing_mode}')
+        if 'pipeline_routing_rules' in bot_data:
+            bot_data['pipeline_routing_rules'] = await self._validate_routing_rules(
+                context, bot_data['pipeline_routing_rules']
+            )
 
         # Compatibility mode preserves LangBot's historical default-pipeline behavior.
         # Strict bots never receive an implicit Agent route.
@@ -161,6 +219,10 @@ class BotService:
 
         if 'routing_mode' in update_data and update_data['routing_mode'] not in persistence_bot.ROUTING_MODES:
             raise ValueError(f'Invalid routing_mode: {update_data["routing_mode"]}')
+        if 'pipeline_routing_rules' in update_data:
+            update_data['pipeline_routing_rules'] = await self._validate_routing_rules(
+                context, update_data['pipeline_routing_rules']
+            )
 
         # set use_pipeline_name
         if 'use_pipeline_uuid' in update_data:

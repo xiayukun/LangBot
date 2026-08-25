@@ -466,3 +466,55 @@ async def test_routes_only_unmatched_message_is_audited_without_entering_agent(
     assert record_call.kwargs['status'] == 'unrouted'
     assert record_call.kwargs['session_id'] == expected_session_id
     monitoring_service.record_session_start.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_explicit_agent_connector_route_bypasses_pipeline_aggregator():
+    from tests.factories.platform import FakePlatform
+
+    adapter = FakePlatform()
+    agent_connector_service = SimpleNamespace(handle_inbound=AsyncMock(return_value={'status': 'accepted'}))
+    application = SimpleNamespace(
+        persistence_mgr=SimpleNamespace(mode=SimpleNamespace(value='local')),
+        workspace_service=_WorkspaceService(),
+        agent_connector_service=agent_connector_service,
+        msg_aggregator=SimpleNamespace(add_message=AsyncMock()),
+    )
+    entity = SimpleNamespace(
+        uuid=BOT_A,
+        workspace_uuid=WORKSPACE_A,
+        name='Agent Bot',
+        enable=True,
+        pipeline_routing_rules=[
+            {
+                'type': 'launcher_type',
+                'operator': 'eq',
+                'value': 'person',
+                'agent_connector_uuid': 'connector-1',
+            }
+        ],
+        routing_mode='routes_only',
+        use_pipeline_uuid=None,
+    )
+    logger = SimpleNamespace(info=AsyncMock(), error=AsyncMock())
+    runtime = RuntimeBot(
+        ap=application,
+        bot_entity=entity,
+        adapter=adapter,
+        logger=logger,
+        execution_context=_context(WORKSPACE_A, BOT_A),
+    )
+    await runtime.initialize()
+    event = adapter.create_friend_message('hello', sender_id='person-1')
+    event.source_platform_object = SimpleNamespace(
+        event=SimpleNamespace(message=SimpleNamespace(message_id='feishu-message-1'))
+    )
+
+    await adapter.simulate_inbound_event(event)
+
+    application.msg_aggregator.add_message.assert_not_awaited()
+    agent_connector_service.handle_inbound.assert_awaited_once()
+    call = agent_connector_service.handle_inbound.await_args
+    assert call.kwargs['connector_uuid'] == 'connector-1'
+    assert call.kwargs['source_event_id'] == 'feishu-message-1'
+    assert call.kwargs['message_chain'] == [{'type': 'Plain', 'text': 'hello'}]
