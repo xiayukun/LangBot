@@ -1,6 +1,6 @@
 ---
 name: langbot-mcp-ops
-description: Operate a LangBot instance through its built-in MCP (Model Context Protocol) server. Use when an AI agent needs to manage LangBot — list/create/update/delete bots, pipelines, models, knowledge bases, MCP servers, and skills — over MCP instead of raw HTTP. Covers the /mcp endpoint, API-key auth (web-UI lbk_ keys and the config.yaml global key), the tool surface, and client configuration. Triggers on "langbot mcp", "manage langbot via mcp", "langbot /mcp", "langbot mcp server".
+description: Operate a LangBot instance through its built-in MCP (Model Context Protocol) server. Use when an AI agent needs to send a person or group message or manage LangBot — bots, pipelines, models, knowledge bases, MCP servers, and skills — over MCP instead of raw HTTP. Covers the /mcp endpoint, API-key auth (web-UI lbk_ keys and the config.yaml global key), safe target discovery, the tool surface, and client configuration. Triggers on "langbot mcp", "manage langbot via mcp", "send through langbot", "langbot /mcp", "langbot mcp server".
 ---
 
 # LangBot MCP Operations
@@ -45,6 +45,18 @@ scopes do not authorize a tool gets `403 Forbidden`.
 
 ## Client configuration
 
+Codex (`config.toml`), keeping the API key in an environment variable:
+
+```toml
+[mcp_servers.langbot_notify]
+url = "http://<langbot-host>:5300/mcp"
+env_http_headers = { "X-API-Key" = "LANGBOT_API_KEY" }
+required = false
+default_tools_approval_mode = "writes"
+```
+
+Generic MCP client:
+
 ```json
 {
   "mcpServers": {
@@ -64,6 +76,7 @@ The tools wrap the LangBot service layer. Current tools (v1):
 | --- | --- |
 | `get_system_info` | Version, edition, instance id |
 | `list_bots` / `get_bot` / `create_bot` / `update_bot` / `delete_bot` | Manage messaging-platform bots (secrets redacted on read) |
+| `send_message` | Send one message through a selected bot to one person or group |
 | `list_pipelines` / `get_pipeline` / `create_pipeline` / `update_pipeline` / `delete_pipeline` | Manage pipelines |
 | `list_llm_models` / `get_llm_model` / `list_embedding_models` / `list_model_providers` | Inspect models & providers |
 | `list_knowledge_bases` / `get_knowledge_base` / `retrieve_knowledge_base` | RAG knowledge bases (incl. semantic search) |
@@ -76,6 +89,17 @@ shape as the corresponding HTTP API request body. Discover resources with the
 `resource.view`; mutations require `resource.manage`. All service calls inherit
 the immutable Workspace context authenticated at the MCP transport boundary.
 
+`send_message` is a write and requires `runtime.operate`. Its arguments are:
+
+- `bot_uuid`: an existing bot UUID discovered with `list_bots`;
+- `target_type`: exactly `person` or `group`;
+- `target_id`: the platform-specific person or group identifier;
+- `message_chain`: the existing LangBot message-chain JSON array.
+
+Never guess a bot UUID or target ID. If no configured target is available, ask
+the operator for one. Do not request, echo, or place platform credentials or API
+keys in tool arguments.
+
 ## How to use
 
 1. Get an API key (web UI key, or set `api.global_api_key` in config.yaml).
@@ -83,6 +107,8 @@ the immutable Workspace context authenticated at the MCP transport boundary.
 3. Call `get_system_info` to confirm connectivity.
 4. Use `list_*` tools to discover, then `get_*` / `create_*` / `update_*` /
    `delete_*` as needed.
+5. To send a notification, call `list_bots`, select an existing bot, verify the
+   operator-supplied person/group target ID, then call `send_message`.
 
 ## Implementation & maintenance (for LangBot developers)
 

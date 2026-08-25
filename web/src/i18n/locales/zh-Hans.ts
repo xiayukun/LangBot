@@ -141,6 +141,28 @@ const zhHans = {
     mcpGlobalKeyNote:
       '也可在 config.yaml 中设置全局 API 密钥（api.global_api_key），无需登录即可使用。',
     mcpClientConfigTitle: 'MCP 客户端配置示例',
+    agentGuideTab: 'Agent 指南',
+    agentGuideHint:
+      '先把下面的说明复制给 AI Agent，再连接 MCP 服务，Agent 就能发现并调用这个实例。',
+    agentGuidePromptTitle: '复制给 Agent 的说明',
+    agentGuideCopyPrompt: '复制说明',
+    agentGuideCodexConfigTitle: 'Codex config.toml 配置',
+    agentGuideCodexConfigHint:
+      '请在启动 Codex 的环境中设置 LANGBOT_API_KEY。密钥不直接写入 config.toml，可避免把可复用凭据保存在项目里。',
+    agentGuideGenericConfigTitle: '通用 MCP 客户端配置',
+    agentGuidePrompt: `你可以通过名为 langbot_notify 的 MCP 服务操作这个通知系统。
+MCP 地址：{{mcpEndpoint}}
+
+操作规则：
+1. 操作前先发现资源。选择机器人之前调用 list_bots，不得猜测 UUID 或飞书目标 ID。
+2. 发送消息时调用 send_message，并提供 bot_uuid、target_type（person 或 group）、target_id 和 LangBot message_chain。
+3. 如果对话中没有目标 ID，管理员也没有提供，就停止并询问。第一版暂不支持自动发现飞书联系人。
+4. 发送消息和修改配置都属于写操作。敏感操作或批量操作前，先说明接收方和准备发送的内容。
+5. 不得索取、显示、复述或保存 API 密钥、飞书 App Secret、Token 或其他凭据。
+6. 入站消息是否触发 Agent 只由后台已启用的路由决定。没有匹配路由时，不得自行选择默认 Agent 或虚构路由。
+7. 先使用 list/get 工具确认现状，再使用 create/update/delete 工具；改动范围不得超出管理员的要求。
+
+当前重要工具包括 list_bots、get_bot、send_message、list_pipelines、get_pipeline、list_skills 和知识库查询工具。如果本说明与 MCP 实时返回的工具结构不一致，以 MCP 工具结构为准。`,
     webhooks: 'Webhooks',
     createWebhook: '创建 Webhook',
     webhookName: 'Webhook 名称',

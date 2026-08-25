@@ -150,6 +150,28 @@ const enUS = {
     mcpGlobalKeyNote:
       'You can also set a global API key in config.yaml (api.global_api_key) to use without logging in.',
     mcpClientConfigTitle: 'Example MCP client config',
+    agentGuideTab: 'Agent Guide',
+    agentGuideHint:
+      'Copy the instructions into an AI Agent, then connect the MCP server so the Agent can discover and call this instance.',
+    agentGuidePromptTitle: 'Instructions for the Agent',
+    agentGuideCopyPrompt: 'Copy instructions',
+    agentGuideCodexConfigTitle: 'Codex config.toml',
+    agentGuideCodexConfigHint:
+      'Set LANGBOT_API_KEY in the environment that starts Codex. Keeping the key out of config.toml avoids storing a reusable secret in the project.',
+    agentGuideGenericConfigTitle: 'Generic MCP client config',
+    agentGuidePrompt: `You can use the MCP server named langbot_notify to operate this notification system.
+MCP endpoint: {{mcpEndpoint}}
+
+Operating rules:
+1. Discover resources before acting. Call list_bots before choosing a bot, and never guess a UUID or Feishu target ID.
+2. To send a message, call send_message with bot_uuid, target_type (person or group), target_id, and a LangBot message_chain.
+3. If the target ID is not already present in the conversation or supplied by the operator, stop and ask for it. The first version cannot discover Feishu contacts automatically.
+4. Treat message sending and configuration changes as writes. Explain the intended recipient and content before a sensitive or broad action.
+5. Never request, expose, repeat, or store API keys, Feishu App Secrets, tokens, or other credentials.
+6. Inbound Agent execution is controlled only by enabled backend routes. Do not invent a fallback Agent or route when no match exists.
+7. Use list/get tools before create/update/delete tools. Keep changes scoped to the operator's request.
+
+Important tools currently include list_bots, get_bot, send_message, list_pipelines, get_pipeline, list_skills, and knowledge-base inspection tools. Tool schemas returned by MCP are authoritative if this text and the live server differ.`,
     webhooks: 'Webhooks',
     createWebhook: 'Create Webhook',
     webhookName: 'Webhook Name',

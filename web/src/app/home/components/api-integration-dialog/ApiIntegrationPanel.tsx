@@ -37,6 +37,7 @@ import {
 import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog';
 import { backendClient } from '@/app/infra/http';
 import { PanelToolbar } from '../settings-dialog/panel-layout';
+import AgentGuidePanel from './AgentGuidePanel';
 
 interface ApiKey {
   id: number;
@@ -271,6 +272,9 @@ export default function ApiIntegrationPanel({
             <TabsTrigger value="apikeys">{t('common.apiKeys')}</TabsTrigger>
             <TabsTrigger value="webhooks">{t('common.webhooks')}</TabsTrigger>
             <TabsTrigger value="mcp">{t('common.mcpTab')}</TabsTrigger>
+            <TabsTrigger value="agent-guide">
+              {t('common.agentGuideTab')}
+            </TabsTrigger>
           </TabsList>
           {activeTab === 'apikeys' ? (
             <Button
@@ -515,6 +519,17 @@ Authorization: Bearer <your-api-key>`}
 }`}
             </pre>
           </div>
+        </TabsContent>
+
+        <TabsContent
+          value="agent-guide"
+          className="min-h-0 flex-1 overflow-auto px-6 py-5"
+        >
+          <AgentGuidePanel
+            mcpEndpoint={mcpEndpoint}
+            copiedValue={copiedKey}
+            onCopy={handleCopyKey}
+          />
         </TabsContent>
       </Tabs>
 

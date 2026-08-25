@@ -54,7 +54,8 @@ def build_ap() -> SimpleNamespace:
 
     ap.persistence_mgr = SimpleNamespace(tenant_scope=tenant_scope)
     ap.bot_service = SimpleNamespace(
-        get_bots=AsyncMock(return_value=[{'uuid': 'bot-1', 'name': 'Demo Bot', 'adapter': 'telegram'}])
+        get_bots=AsyncMock(return_value=[{'uuid': 'bot-1', 'name': 'Demo Bot', 'adapter': 'telegram'}]),
+        send_message=AsyncMock(),
     )
     ap.pipeline_service = SimpleNamespace(get_pipelines=AsyncMock(return_value=[{'uuid': 'pl-1', 'name': 'default'}]))
     ap.llm_model_service = SimpleNamespace(get_llm_models=AsyncMock(return_value=[]))
@@ -113,7 +114,7 @@ async def main() -> int:
             tools = await session.list_tools()
             names = [t.name for t in tools.tools]
             print(f'PASS: listed {len(names)} tools')
-            for required in ('list_bots', 'get_system_info', 'list_skills'):
+            for required in ('list_bots', 'get_system_info', 'list_skills', 'send_message'):
                 if required not in names:
                     failures.append(f'missing tool {required}')
 
@@ -130,6 +131,23 @@ async def main() -> int:
                 failures.append(f'get_system_info wrong: {text2!r}')
             else:
                 print('PASS: get_system_info returned version')
+
+            message_chain = [{'type': 'text', 'text': 'Smoke test'}]
+            res3 = await session.call_tool(
+                'send_message',
+                {
+                    'bot_uuid': 'bot-1',
+                    'target_type': 'person',
+                    'target_id': 'user-1',
+                    'message_chain': message_chain,
+                },
+            )
+            text3 = res3.content[0].text if res3.content else ''
+            if '"sent": true' not in text3:
+                failures.append(f'send_message wrong: {text3!r}')
+            else:
+                ap.bot_service.send_message.assert_awaited_once()
+                print('PASS: send_message delegated through the authenticated service')
 
     shutdown.set()
     with contextlib.suppress(Exception):

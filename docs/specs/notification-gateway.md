@@ -266,11 +266,13 @@ Trust boundaries are HTTP/MCP requests, Feishu events, Agent connector responses
 
 ### Slice 1: Existing send operation through MCP and copy-ready Agent guide
 
-- [ ] Add a failing MCP test for `send_message`, permission enforcement, and argument validation.
-- [ ] Add the smallest MCP tool that calls the existing `BotService.send_message`.
-- [ ] Extend the existing API Integration UI with a copy-ready Agent instruction and MCP configuration.
-- [ ] Add `en_US` and `zh_Hans` strings and frontend unit tests for generated content.
-- Verification: focused backend tests, frontend unit tests, lint, and build.
+- [x] Add a failing MCP test for `send_message`, permission enforcement, and argument validation.
+- [x] Add the smallest MCP tool that calls the existing `BotService.send_message`.
+- [x] Extend the existing API Integration UI with a copy-ready Agent instruction and MCP configuration.
+- [x] Add `en_US` and `zh_Hans` strings and frontend unit tests for generated content.
+- Verification: focused backend tests, authenticated Streamable HTTP smoke test, frontend unit tests,
+  targeted lint, and production build. The repository-wide frontend lint currently reports the
+  checkout-wide Windows CRLF baseline, so changed frontend files are linted explicitly.
 
 ### Slice 2: Strict route-only behavior
 
@@ -313,4 +315,3 @@ Trust boundaries are HTTP/MCP requests, Feishu events, Agent connector responses
 - Final product and GitHub repository name; `LangBot Notify` is temporary.
 - Whether multi-target delivery retries should be automatic in the MVP or operator-triggered first.
 - Which Codex integration becomes the default after the HTTP connector: Codex app-server, ACP, or the upstream Agent Runner once its stable release lands.
-

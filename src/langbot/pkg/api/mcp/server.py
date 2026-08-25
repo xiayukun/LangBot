@@ -29,10 +29,20 @@ if typing.TYPE_CHECKING:
     from ...core import app as app_module
 
 
+# MCP clients such as Codex surface these server instructions to the agent. Keep
+# the send workflow self-contained near the beginning because clients may
+# truncate long instructions.
+# Source: https://developers.openai.com/codex/extend/mcp
 INSTRUCTIONS = """\
 This MCP server manages a LangBot instance. LangBot is an LLM-native instant
-messaging bot platform. Use these tools to inspect and manage bots, pipelines,
-models, knowledge bases, MCP servers, and skills.
+messaging bot platform. Discover resources before acting. To send a message,
+call `list_bots`, choose an existing bot, then call `send_message`. Never guess
+a bot UUID or person/group target ID; ask the operator when a target ID is not
+available. Treat sends and configuration changes as writes, and never request
+or expose API keys or messaging-platform credentials.
+
+Use the remaining tools to inspect and manage pipelines, models, knowledge
+bases, MCP servers, and skills.
 
 Authentication uses a LangBot API key (web-UI-created `lbk_...` key or the
 global API key from config.yaml), passed as the `X-API-Key` header or
@@ -127,6 +137,36 @@ class LangBotMCPServer:
             context = _authorized(Permission.RESOURCE_MANAGE)
             await ap.bot_service.delete_bot(context, bot_uuid)
             return _dump({'ok': True})
+
+        @mcp.tool(
+            description=(
+                'Send a message through one messaging-platform bot to one person or group. '
+                'Discover the bot UUID with `list_bots`; never guess target IDs. '
+                '`message_chain` matches the existing LangBot message-chain JSON array.'
+            )
+        )
+        async def send_message(
+            bot_uuid: str,
+            target_type: typing.Literal['person', 'group'],
+            target_id: str,
+            message_chain: list[dict[str, typing.Any]],
+        ) -> str:
+            context = _authorized(Permission.RUNTIME_OPERATE)
+            await ap.bot_service.send_message(
+                context,
+                bot_uuid,
+                target_type,
+                target_id,
+                message_chain,
+            )
+            return _dump(
+                {
+                    'sent': True,
+                    'bot_uuid': bot_uuid,
+                    'target_type': target_type,
+                    'target_id': target_id,
+                }
+            )
 
         # ----- Pipelines ----------------------------------------------- #
         @mcp.tool(description='List all pipelines.')
