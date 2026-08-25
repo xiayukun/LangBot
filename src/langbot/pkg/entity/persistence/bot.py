@@ -3,6 +3,11 @@ import sqlalchemy
 from .base import Base
 
 
+ROUTING_MODE_ROUTES_ONLY = 'routes_only'
+ROUTING_MODE_FALLBACK_DEFAULT = 'fallback_default'
+ROUTING_MODES = frozenset({ROUTING_MODE_ROUTES_ONLY, ROUTING_MODE_FALLBACK_DEFAULT})
+
+
 class BotAdmin(Base):
     """Bot admin — a launcher that has admin privilege for a specific bot's commands"""
 
@@ -55,6 +60,12 @@ class Bot(Base):
     use_pipeline_name = sqlalchemy.Column(sqlalchemy.String(255), nullable=True)
     use_pipeline_uuid = sqlalchemy.Column(sqlalchemy.String(255), nullable=True)
     pipeline_routing_rules = sqlalchemy.Column(sqlalchemy.JSON, nullable=False, server_default='[]')
+    routing_mode = sqlalchemy.Column(
+        sqlalchemy.String(32),
+        nullable=False,
+        default=ROUTING_MODE_ROUTES_ONLY,
+        server_default=sqlalchemy.text("'routes_only'"),
+    )
     created_at = sqlalchemy.Column(sqlalchemy.DateTime, nullable=False, server_default=sqlalchemy.func.now())
     updated_at = sqlalchemy.Column(
         sqlalchemy.DateTime,

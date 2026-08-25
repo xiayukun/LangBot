@@ -41,6 +41,11 @@ a bot UUID or person/group target ID; ask the operator when a target ID is not
 available. Treat sends and configuration changes as writes, and never request
 or expose API keys or messaging-platform credentials.
 
+New bots default to `routing_mode=routes_only`: unmatched inbound messages do
+not enter an Agent pipeline. Only set `fallback_default` when the operator
+explicitly requests compatibility behavior and has selected a default pipeline.
+Group routing rules may set `group_trigger` to `mention` or `all`.
+
 Use the remaining tools to inspect and manage pipelines, models, knowledge
 bases, MCP servers, and skills.
 

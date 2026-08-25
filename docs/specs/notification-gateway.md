@@ -276,11 +276,12 @@ Trust boundaries are HTTP/MCP requests, Feishu events, Agent connector responses
 
 ### Slice 2: Strict route-only behavior
 
-- [ ] Add a backward-compatible `routing_mode` schema and Alembic migration.
-- [ ] Add failing tests proving unmatched messages are persisted and never queued in `ROUTES_ONLY` mode.
-- [ ] Implement route-only stopping and an explicit UI selector; keep `FALLBACK_DEFAULT` for migrated bots.
-- [ ] Add group trigger choices for mention-only and every message.
-- Verification: route resolver/unit tests, persistence migration tests, bot HTTP tests, UI tests/build.
+- [x] Add a backward-compatible `routing_mode` schema and Alembic migration.
+- [x] Add failing tests proving unmatched messages are persisted and never queued in `ROUTES_ONLY` mode.
+- [x] Implement route-only stopping and an explicit UI selector; keep `FALLBACK_DEFAULT` for migrated bots.
+- [x] Add group trigger choices for mention-only and every message.
+- Verification: route resolver/unit tests, person/group callback audit tests, SQLite upgrade/backfill tests,
+  bot HTTP tests, MCP smoke test, frontend unit tests, targeted lint, and production build.
 
 ### Slice 3: Managed targets and multi-target notifications
 

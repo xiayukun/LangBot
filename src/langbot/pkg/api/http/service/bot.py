@@ -113,21 +113,35 @@ class BotService:
         bot_data = bot_data.copy()
         bot_data['uuid'] = str(uuid.uuid4())
         bot_data['workspace_uuid'] = workspace_uuid
+        routing_mode = bot_data.setdefault('routing_mode', persistence_bot.ROUTING_MODE_ROUTES_ONLY)
+        if routing_mode not in persistence_bot.ROUTING_MODES:
+            raise ValueError(f'Invalid routing_mode: {routing_mode}')
 
-        # bind the most recently updated pipeline if any exist
-        result = await self.ap.persistence_mgr.execute_async(
-            scope_statement(
+        # Compatibility mode preserves LangBot's historical default-pipeline behavior.
+        # Strict bots never receive an implicit Agent route.
+        if routing_mode == persistence_bot.ROUTING_MODE_FALLBACK_DEFAULT:
+            requested_pipeline_uuid = bot_data.get('use_pipeline_uuid')
+            pipeline_statement = scope_statement(
                 sqlalchemy.select(persistence_pipeline.LegacyPipeline),
                 persistence_pipeline.LegacyPipeline,
                 context,
             )
-            .order_by(persistence_pipeline.LegacyPipeline.updated_at.desc())
-            .limit(1)
-        )
-        pipeline = result.first()
-        if pipeline is not None:
-            bot_data['use_pipeline_uuid'] = pipeline.uuid
-            bot_data['use_pipeline_name'] = pipeline.name
+            if requested_pipeline_uuid:
+                pipeline_statement = pipeline_statement.where(
+                    persistence_pipeline.LegacyPipeline.uuid == requested_pipeline_uuid
+                )
+            else:
+                pipeline_statement = pipeline_statement.order_by(
+                    persistence_pipeline.LegacyPipeline.updated_at.desc()
+                ).limit(1)
+
+            result = await self.ap.persistence_mgr.execute_async(pipeline_statement)
+            pipeline = result.first()
+            if pipeline is not None:
+                bot_data['use_pipeline_uuid'] = pipeline.uuid
+                bot_data['use_pipeline_name'] = pipeline.name
+            elif requested_pipeline_uuid:
+                raise WorkspaceNotFoundError('Pipeline not found')
 
         await self.ap.persistence_mgr.execute_async(sqlalchemy.insert(persistence_bot.Bot).values(bot_data))
 
@@ -145,22 +159,29 @@ class BotService:
         update_data.pop('uuid', None)
         update_data.pop('workspace_uuid', None)
 
+        if 'routing_mode' in update_data and update_data['routing_mode'] not in persistence_bot.ROUTING_MODES:
+            raise ValueError(f'Invalid routing_mode: {update_data["routing_mode"]}')
+
         # set use_pipeline_name
         if 'use_pipeline_uuid' in update_data:
-            result = await self.ap.persistence_mgr.execute_async(
-                scope_statement(
-                    sqlalchemy.select(persistence_pipeline.LegacyPipeline).where(
-                        persistence_pipeline.LegacyPipeline.uuid == update_data['use_pipeline_uuid']
-                    ),
-                    persistence_pipeline.LegacyPipeline,
-                    workspace_uuid,
+            if update_data['use_pipeline_uuid']:
+                result = await self.ap.persistence_mgr.execute_async(
+                    scope_statement(
+                        sqlalchemy.select(persistence_pipeline.LegacyPipeline).where(
+                            persistence_pipeline.LegacyPipeline.uuid == update_data['use_pipeline_uuid']
+                        ),
+                        persistence_pipeline.LegacyPipeline,
+                        workspace_uuid,
+                    )
                 )
-            )
-            pipeline = result.first()
-            if pipeline is not None:
-                update_data['use_pipeline_name'] = pipeline.name
+                pipeline = result.first()
+                if pipeline is not None:
+                    update_data['use_pipeline_name'] = pipeline.name
+                else:
+                    raise WorkspaceNotFoundError('Pipeline not found')
             else:
-                raise WorkspaceNotFoundError('Pipeline not found')
+                update_data['use_pipeline_uuid'] = None
+                update_data['use_pipeline_name'] = None
 
         result = await self.ap.persistence_mgr.execute_async(
             scope_statement(

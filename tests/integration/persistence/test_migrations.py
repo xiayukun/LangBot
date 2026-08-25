@@ -108,7 +108,7 @@ class TestSQLiteMigrationUpgrade:
         await run_alembic_upgrade(sqlite_engine, 'head')
 
         assert await get_alembic_current(sqlite_engine) == _get_script_head()
-        assert _get_script_head() == '0021_merge_reasoning_config'
+        assert _get_script_head() == '0022_bot_routing_mode'
 
     @pytest.mark.asyncio
     async def test_upgrade_from_reasoning_config_head_to_merged_head(self, sqlite_engine):
@@ -119,7 +119,29 @@ class TestSQLiteMigrationUpgrade:
         await run_alembic_stamp(sqlite_engine, '0018_llm_reasoning_config')
         await run_alembic_upgrade(sqlite_engine, 'head')
 
-        assert await get_alembic_current(sqlite_engine) == '0021_merge_reasoning_config'
+        assert await get_alembic_current(sqlite_engine) == '0022_bot_routing_mode'
+
+    @pytest.mark.asyncio
+    async def test_bot_routing_mode_preserves_existing_bots_and_defaults_new_bots_to_routes_only(
+        self,
+        sqlite_engine,
+    ):
+        async with sqlite_engine.begin() as conn:
+            await conn.execute(text('CREATE TABLE bots (uuid VARCHAR(255) PRIMARY KEY)'))
+            await conn.execute(text("INSERT INTO bots (uuid) VALUES ('existing-bot')"))
+
+        await run_alembic_stamp(sqlite_engine, '0021_merge_reasoning_config')
+        await run_alembic_upgrade(sqlite_engine, 'head')
+
+        async with sqlite_engine.begin() as conn:
+            existing_mode = (
+                await conn.execute(text("SELECT routing_mode FROM bots WHERE uuid = 'existing-bot'"))
+            ).scalar_one()
+            await conn.execute(text("INSERT INTO bots (uuid) VALUES ('new-bot')"))
+            new_mode = (await conn.execute(text("SELECT routing_mode FROM bots WHERE uuid = 'new-bot'"))).scalar_one()
+
+        assert existing_mode == 'fallback_default'
+        assert new_mode == 'routes_only'
 
     @pytest.mark.asyncio
     async def test_upgrade_from_baseline_to_head(self, sqlite_engine):

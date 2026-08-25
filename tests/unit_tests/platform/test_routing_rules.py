@@ -57,12 +57,13 @@ class TestResolvePipelineUuid:
     """Test the resolve_pipeline_uuid method."""
 
     @staticmethod
-    def _make_bot(default_pipeline: str, rules: list):
+    def _make_bot(default_pipeline: str, rules: list, routing_mode: str = 'fallback_default'):
         from langbot.pkg.platform.botmgr import RuntimeBot
 
         bot_entity = Mock()
         bot_entity.use_pipeline_uuid = default_pipeline
         bot_entity.pipeline_routing_rules = rules
+        bot_entity.routing_mode = routing_mode
 
         bot = object.__new__(RuntimeBot)
         bot.bot_entity = bot_entity
@@ -78,6 +79,56 @@ class TestResolvePipelineUuid:
         bot = self._make_bot('default-uuid', None)
         uuid, routed = bot.resolve_pipeline_uuid('person', '123', 'hi')
         assert uuid == 'default-uuid'
+        assert routed is False
+
+    def test_routes_only_without_matching_rule_returns_none(self):
+        bot = self._make_bot('default-uuid', [], routing_mode='routes_only')
+
+        uuid, routed = bot.resolve_pipeline_uuid('person', '123', 'hi')
+
+        assert uuid is None
+        assert routed is False
+
+    def test_routes_only_still_uses_a_matching_rule(self):
+        bot = self._make_bot(
+            'default-uuid',
+            [
+                {
+                    'type': 'launcher_type',
+                    'operator': 'eq',
+                    'value': 'group',
+                    'pipeline_uuid': 'group-pipeline',
+                }
+            ],
+            routing_mode='routes_only',
+        )
+
+        uuid, routed = bot.resolve_pipeline_uuid('group', '123', 'hi')
+
+        assert uuid == 'group-pipeline'
+        assert routed is True
+
+    def test_legacy_entity_without_routing_mode_keeps_fallback(self):
+        from langbot.pkg.platform.botmgr import RuntimeBot
+
+        bot = object.__new__(RuntimeBot)
+        bot.bot_entity = type(
+            'LegacyBot',
+            (),
+            {'use_pipeline_uuid': 'default-uuid', 'pipeline_routing_rules': []},
+        )()
+
+        uuid, routed = bot.resolve_pipeline_uuid('person', '123', 'hi')
+
+        assert uuid == 'default-uuid'
+        assert routed is False
+
+    def test_unknown_routing_mode_fails_closed(self):
+        bot = self._make_bot('default-uuid', [], routing_mode='unexpected')
+
+        uuid, routed = bot.resolve_pipeline_uuid('person', '123', 'hi')
+
+        assert uuid is None
         assert routed is False
 
     def test_launcher_type_match(self):
@@ -117,6 +168,76 @@ class TestResolvePipelineUuid:
         uuid, routed = bot.resolve_pipeline_uuid('person', '99999', 'hi')
         assert uuid == 'default-uuid'
         assert routed is False
+
+    def test_group_mention_route_requires_a_bot_mention(self):
+        rules = [
+            {
+                'type': 'launcher_id',
+                'operator': 'eq',
+                'value': 'group-1',
+                'pipeline_uuid': 'group-pipeline',
+                'group_trigger': 'mention',
+            }
+        ]
+        bot = self._make_bot(None, rules, routing_mode='routes_only')
+
+        unmatched_uuid, unmatched_routed = bot.resolve_pipeline_uuid(
+            'group',
+            'group-1',
+            'hello',
+            bot_mentioned=False,
+        )
+        matched_uuid, matched_routed = bot.resolve_pipeline_uuid(
+            'group',
+            'group-1',
+            'hello',
+            bot_mentioned=True,
+        )
+
+        assert (unmatched_uuid, unmatched_routed) == (None, False)
+        assert (matched_uuid, matched_routed) == ('group-pipeline', True)
+
+    def test_group_all_route_does_not_require_a_bot_mention(self):
+        rules = [
+            {
+                'type': 'launcher_id',
+                'operator': 'eq',
+                'value': 'group-1',
+                'pipeline_uuid': 'group-pipeline',
+                'group_trigger': 'all',
+            }
+        ]
+        bot = self._make_bot(None, rules, routing_mode='routes_only')
+
+        uuid, routed = bot.resolve_pipeline_uuid(
+            'group',
+            'group-1',
+            'hello',
+            bot_mentioned=False,
+        )
+
+        assert (uuid, routed) == ('group-pipeline', True)
+
+    def test_unknown_group_trigger_fails_closed(self):
+        rules = [
+            {
+                'type': 'launcher_id',
+                'operator': 'eq',
+                'value': 'group-1',
+                'pipeline_uuid': 'group-pipeline',
+                'group_trigger': 'unexpected',
+            }
+        ]
+        bot = self._make_bot(None, rules, routing_mode='routes_only')
+
+        uuid, routed = bot.resolve_pipeline_uuid(
+            'group',
+            'group-1',
+            'hello',
+            bot_mentioned=True,
+        )
+
+        assert (uuid, routed) == (None, False)
 
     def test_message_content_contains(self):
         rules = [

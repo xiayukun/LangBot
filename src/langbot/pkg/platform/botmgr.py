@@ -118,6 +118,8 @@ class RuntimeBot:
 
     PIPELINE_DISCARD = '__discard__'
     PIPELINE_DISCARD_DISPLAY_NAME = 'Discarded'
+    PIPELINE_UNROUTED = '__unrouted__'
+    PIPELINE_UNROUTED_DISPLAY_NAME = 'Unrouted'
 
     def resolve_pipeline_uuid(
         self,
@@ -125,6 +127,7 @@ class RuntimeBot:
         launcher_id: str,
         message_text: str,
         message_element_types: list[str] | None = None,
+        bot_mentioned: bool = False,
     ) -> tuple[str | None, bool]:
         """Resolve pipeline UUID based on routing rules.
 
@@ -138,6 +141,9 @@ class RuntimeBot:
           - message_has_element: message contains element of given type
             (Image, Voice, File, Forward, Face, At, AtAll, Quote)
             Operators: eq (has), neq (doesn't have)
+
+        Group routes can set group_trigger to ``mention`` or ``all``. Existing
+        rules without the field retain ``all`` behavior.
 
         Operators: eq, neq, contains, not_contains, starts_with, regex
 
@@ -159,6 +165,13 @@ class RuntimeBot:
             if not rule_type or not target_uuid:
                 continue
 
+            if launcher_type == 'group':
+                group_trigger = rule.get('group_trigger', 'all')
+                if group_trigger not in {'mention', 'all'}:
+                    continue
+                if group_trigger == 'mention' and not bot_mentioned:
+                    continue
+
             if rule_type == 'launcher_type':
                 if self._match_operator(launcher_type, operator, rule_value):
                     return target_uuid, True
@@ -175,6 +188,13 @@ class RuntimeBot:
                 elif operator == 'neq' and not has_element:
                     return target_uuid, True
 
+        routing_mode = getattr(
+            self.bot_entity,
+            'routing_mode',
+            persistence_bot.ROUTING_MODE_FALLBACK_DEFAULT,
+        )
+        if routing_mode != persistence_bot.ROUTING_MODE_FALLBACK_DEFAULT:
+            return None, False
         return self.bot_entity.use_pipeline_uuid, False
 
     def resolve_event_pipeline_uuid(
@@ -184,6 +204,7 @@ class RuntimeBot:
         launcher_id: str,
         message_text: str,
         message_element_types: list[str] | None = None,
+        bot_mentioned: bool = False,
     ) -> tuple[str | None, bool]:
         """Resolve a pipeline, honoring a trusted per-task adapter override."""
 
@@ -197,17 +218,22 @@ class RuntimeBot:
             launcher_id,
             message_text,
             message_element_types,
+            bot_mentioned,
         )
 
-    async def _record_discarded_message(
+    async def _record_unprocessed_message(
         self,
         launcher_type: provider_session.LauncherTypes,
         launcher_id: str | int,
         sender_id: str | int,
         message_event: platform_events.MessageEvent,
         message_chain: platform_message.MessageChain,
+        *,
+        pipeline_id: str,
+        pipeline_name: str,
+        status: str,
     ) -> None:
-        """Record a discarded message in the monitoring system."""
+        """Record a message that intentionally did not enter an Agent pipeline."""
         try:
             if hasattr(message_chain, 'model_dump'):
                 message_content = json.dumps(message_chain.model_dump(), ensure_ascii=False)
@@ -221,19 +247,19 @@ class RuntimeBot:
                 elif hasattr(message_event.sender, 'member_name'):
                     sender_name = message_event.sender.member_name
 
-            # Use the same session_id format as monitoring_helper.py
-            session_id = f'{launcher_type}_{launcher_id}'
+            # Use the same session_id format as monitoring_helper.py.
             platform = launcher_type.value if hasattr(launcher_type, 'value') else str(launcher_type)
+            session_id = f'{platform}_{launcher_id}'
 
             await self.ap.monitoring_service.record_message(
                 self.execution_context,
                 bot_id=self.bot_entity.uuid,
                 bot_name=self.bot_entity.name or self.bot_entity.uuid,
-                pipeline_id=self.PIPELINE_DISCARD,
-                pipeline_name=self.PIPELINE_DISCARD_DISPLAY_NAME,
+                pipeline_id=pipeline_id,
+                pipeline_name=pipeline_name,
                 message_content=message_content,
                 session_id=session_id,
-                status='discarded',
+                status=status,
                 level='info',
                 platform=platform,
                 user_id=str(sender_id),
@@ -254,14 +280,52 @@ class RuntimeBot:
                     session_id=session_id,
                     bot_id=self.bot_entity.uuid,
                     bot_name=self.bot_entity.name or self.bot_entity.uuid,
-                    pipeline_id=self.PIPELINE_DISCARD,
-                    pipeline_name=self.PIPELINE_DISCARD_DISPLAY_NAME,
+                    pipeline_id=pipeline_id,
+                    pipeline_name=pipeline_name,
                     platform=platform,
                     user_id=str(sender_id),
                     user_name=sender_name,
                 )
         except Exception as e:
-            await self.logger.error(f'Failed to record discarded message: {e}')
+            await self.logger.error(f'Failed to record {status} message: {e}')
+
+    async def _record_discarded_message(
+        self,
+        launcher_type: provider_session.LauncherTypes,
+        launcher_id: str | int,
+        sender_id: str | int,
+        message_event: platform_events.MessageEvent,
+        message_chain: platform_message.MessageChain,
+    ) -> None:
+        await self._record_unprocessed_message(
+            launcher_type,
+            launcher_id,
+            sender_id,
+            message_event,
+            message_chain,
+            pipeline_id=self.PIPELINE_DISCARD,
+            pipeline_name=self.PIPELINE_DISCARD_DISPLAY_NAME,
+            status='discarded',
+        )
+
+    async def _record_unrouted_message(
+        self,
+        launcher_type: provider_session.LauncherTypes,
+        launcher_id: str | int,
+        sender_id: str | int,
+        message_event: platform_events.MessageEvent,
+        message_chain: platform_message.MessageChain,
+    ) -> None:
+        await self._record_unprocessed_message(
+            launcher_type,
+            launcher_id,
+            sender_id,
+            message_event,
+            message_chain,
+            pipeline_id=self.PIPELINE_UNROUTED,
+            pipeline_name=self.PIPELINE_UNROUTED_DISPLAY_NAME,
+            status='unrouted',
+        )
 
     async def initialize(self):
         def tenant_scoped_listener(listener):
@@ -337,6 +401,17 @@ class RuntimeBot:
                     )
                     return
 
+                if pipeline_uuid is None:
+                    await self.logger.info('Person message did not match a configured route')
+                    await self._record_unrouted_message(
+                        provider_session.LauncherTypes.PERSON,
+                        launcher_id,
+                        event.sender.id,
+                        event,
+                        event.message_chain,
+                    )
+                    return
+
                 await self.ap.msg_aggregator.add_message(
                     bot_uuid=self.bot_entity.uuid,
                     launcher_type=provider_session.LauncherTypes.PERSON,
@@ -388,17 +463,34 @@ class RuntimeBot:
 
                 message_text = str(event.message_chain)
                 element_types = [comp.type for comp in event.message_chain]
+                bot_account_id = getattr(adapter, 'bot_account_id', None)
+                bot_mentioned = bool(bot_account_id) and any(
+                    isinstance(comp, platform_message.At) and str(comp.target) == str(bot_account_id)
+                    for comp in event.message_chain
+                )
                 pipeline_uuid, routed_by_rule = self.resolve_event_pipeline_uuid(
                     adapter,
                     'group',
                     launcher_id,
                     message_text,
                     element_types,
+                    bot_mentioned,
                 )
 
                 if pipeline_uuid == self.PIPELINE_DISCARD:
                     await self.logger.info('Group message discarded by routing rule')
                     await self._record_discarded_message(
+                        provider_session.LauncherTypes.GROUP,
+                        launcher_id,
+                        event.sender.id,
+                        event,
+                        event.message_chain,
+                    )
+                    return
+
+                if pipeline_uuid is None:
+                    await self.logger.info('Group message did not match a configured route')
+                    await self._record_unrouted_message(
                         provider_session.LauncherTypes.GROUP,
                         launcher_id,
                         event.sender.id,

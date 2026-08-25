@@ -212,6 +212,7 @@ export interface Bot {
   adapter_config: object;
   use_pipeline_name?: string;
   use_pipeline_uuid?: string;
+  routing_mode?: 'routes_only' | 'fallback_default';
   pipeline_routing_rules?: PipelineRoutingRule[];
   created_at?: string;
   updated_at?: string;
@@ -235,6 +236,7 @@ export interface PipelineRoutingRule {
   operator: RoutingRuleOperator;
   value: string;
   pipeline_uuid: string;
+  group_trigger?: 'mention' | 'all';
 }
 
 export interface ApiRespKnowledgeBases {

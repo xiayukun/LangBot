@@ -469,6 +469,7 @@ export default function WizardPage() {
         adapter_config: existingBot.adapter_config,
         enable: existingBot.enable,
         use_pipeline_uuid: pipelineResp.uuid,
+        routing_mode: 'fallback_default',
       });
 
       setCurrentStep(3);

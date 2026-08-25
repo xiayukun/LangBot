@@ -168,7 +168,7 @@ Operating rules:
 3. If the target ID is not already present in the conversation or supplied by the operator, stop and ask for it. The first version cannot discover Feishu contacts automatically.
 4. Treat message sending and configuration changes as writes. Explain the intended recipient and content before a sensitive or broad action.
 5. Never request, expose, repeat, or store API keys, Feishu App Secrets, tokens, or other credentials.
-6. Inbound Agent execution is controlled only by enabled backend routes. Do not invent a fallback Agent or route when no match exists.
+6. New bots use routing_mode=routes_only: inbound Agent execution is controlled only by enabled backend routes. Do not invent a fallback Agent or route when no match exists. A group route may set group_trigger to mention or all. Set fallback_default only when the operator explicitly requests compatibility behavior and has selected a default pipeline.
 7. Use list/get tools before create/update/delete tools. Keep changes scoped to the operator's request.
 
 Important tools currently include list_bots, get_bot, send_message, list_pipelines, get_pipeline, list_skills, and knowledge-base inspection tools. Tool schemas returned by MCP are authoritative if this text and the live server differ.`,
@@ -373,7 +373,7 @@ Important tools currently include list_bots, get_bot, send_message, list_pipelin
     saveSuccess: 'Saved successfully',
     saveError: 'Save failed: ',
     createSuccess:
-      'Created successfully. Please enable or modify the bound pipeline',
+      'Created successfully. Configure routing rules before enabling Agent replies.',
     createError: 'Creation failed: ',
     deleteSuccess: 'Deleted successfully',
     deleteError: 'Delete failed: ',
@@ -399,11 +399,21 @@ Important tools currently include list_bots, get_bot, send_message, list_pipelin
     basicInfoDescription: 'Set the bot name and description',
     routingConnection: 'Routing & Connection',
     routingConnectionDescription:
-      'Bind the pipeline that processes messages for this bot',
+      'Choose how inbound messages reach an Agent, then configure the matching rules',
+    routingMode: 'Unmatched Message Behavior',
+    routingModeRoutesOnly: 'Configured routes only',
+    routingModeFallbackDefault: 'Fallback to default pipeline',
+    routingModeRoutesOnlyDescription:
+      'Recommended for notification gateways. A message that matches no rule is audited but never sent to an Agent.',
+    routingModeFallbackDefaultDescription:
+      'Compatibility mode. A message that matches no rule is sent to the default pipeline below.',
     routingRules: 'Conditional Routing Rules',
     routingRulesDescription:
-      'Rules are evaluated in order; first match routes to its pipeline. Fallback to the default pipeline above if none match.',
+      'Rules are evaluated in order; the first match wins. Unmatched messages follow the behavior selected above.',
     addRoutingRule: 'Add Rule',
+    groupTrigger: 'Group Trigger',
+    groupTriggerMention: 'Only when @mentioned',
+    groupTriggerAll: 'Every matching message',
     ruleTypeLauncherType: 'Session Type',
     ruleTypeLauncherId: 'Session ID',
     ruleTypeMessageContent: 'Message Content',

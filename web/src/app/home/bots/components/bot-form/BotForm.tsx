@@ -66,6 +66,7 @@ const getFormSchema = (t: (key: string) => string) =>
     adapter_config: z.record(z.string(), z.any()),
     enable: z.boolean().optional(),
     use_pipeline_uuid: z.string().optional(),
+    routing_mode: z.enum(['routes_only', 'fallback_default']),
     pipeline_routing_rules: z
       .array(
         z.object({
@@ -85,6 +86,7 @@ const getFormSchema = (t: (key: string) => string) =>
           ]),
           value: z.string(),
           pipeline_uuid: z.string(),
+          group_trigger: z.enum(['mention', 'all']).optional(),
         }),
       )
       .optional(),
@@ -113,6 +115,7 @@ export default function BotForm({
       adapter_config: {},
       enable: true,
       use_pipeline_uuid: '',
+      routing_mode: 'routes_only',
       pipeline_routing_rules: [],
     },
   });
@@ -149,6 +152,7 @@ export default function BotForm({
   // Watch adapter and adapter_config for filtering
   const currentAdapter = form.watch('adapter');
   const currentAdapterConfig = form.watch('adapter_config');
+  const currentRoutingMode = form.watch('routing_mode');
 
   // Group adapters by category for the Select dropdown
   const groupedAdapters = useMemo(
@@ -192,6 +196,7 @@ export default function BotForm({
           adapter_config: val.adapter_config,
           enable: val.enable,
           use_pipeline_uuid: val.use_pipeline_uuid || '',
+          routing_mode: val.routing_mode,
           pipeline_routing_rules: val.pipeline_routing_rules || [],
         });
         handleAdapterSelect(val.adapter);
@@ -307,6 +312,7 @@ export default function BotForm({
             adapter_config: bot.adapter_config,
             enable: bot.enable ?? true,
             use_pipeline_uuid: bot.use_pipeline_uuid ?? '',
+            routing_mode: bot.routing_mode ?? 'fallback_default',
             pipeline_routing_rules: bot.pipeline_routing_rules ?? [],
             webhook_full_url: runtimeValues?.webhook_full_url as
               | string
@@ -352,6 +358,7 @@ export default function BotForm({
         adapter_config: form.getValues().adapter_config,
         enable: form.getValues().enable,
         use_pipeline_uuid: form.getValues().use_pipeline_uuid,
+        routing_mode: form.getValues().routing_mode,
         pipeline_routing_rules: form.getValues().pipeline_routing_rules ?? [],
       };
       httpClient
@@ -374,6 +381,7 @@ export default function BotForm({
         description: form.getValues().description ?? '',
         adapter: form.getValues().adapter,
         adapter_config: form.getValues().adapter_config,
+        routing_mode: form.getValues().routing_mode,
       };
       httpClient
         .createBot(newBot)
@@ -449,7 +457,41 @@ export default function BotForm({
                   {t('bots.routingConnectionDescription')}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="routing_mode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('bots.routingMode')}</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="routes_only">
+                            {t('bots.routingModeRoutesOnly')}
+                          </SelectItem>
+                          <SelectItem value="fallback_default">
+                            {t('bots.routingModeFallbackDefault')}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        {currentRoutingMode === 'routes_only'
+                          ? t('bots.routingModeRoutesOnlyDescription')
+                          : t('bots.routingModeFallbackDefaultDescription')}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="use_pipeline_uuid"
@@ -457,7 +499,11 @@ export default function BotForm({
                     <FormItem>
                       <FormLabel>{t('bots.bindPipeline')}</FormLabel>
                       <FormControl>
-                        <Select onValueChange={field.onChange} {...field}>
+                        <Select
+                          onValueChange={field.onChange}
+                          disabled={currentRoutingMode !== 'fallback_default'}
+                          {...field}
+                        >
                           <SelectTrigger>
                             {field.value ? (
                               (() => {

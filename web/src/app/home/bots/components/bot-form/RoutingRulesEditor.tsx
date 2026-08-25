@@ -121,7 +121,7 @@ function RuleRowContent({
 
   return (
     <div
-      className={`flex items-center gap-2 mt-2 p-3 border rounded-md bg-muted/30 ${
+      className={`flex flex-wrap items-center gap-2 mt-2 p-3 border rounded-md bg-muted/30 ${
         isOverlay ? 'shadow-lg ring-2 ring-primary/20 bg-background' : ''
       }`}
     >
@@ -226,6 +226,28 @@ function RuleRowContent({
           onChange={(e) => updateRule(index, { value: e.target.value })}
         />
       )}
+
+      {/* Group trigger selector. Existing rules without this field display all. */}
+      <Select
+        value={rule.group_trigger ?? 'all'}
+        onValueChange={(val) =>
+          updateRule(index, {
+            group_trigger: val as NonNullable<
+              PipelineRoutingRule['group_trigger']
+            >,
+          })
+        }
+      >
+        <SelectTrigger className="w-[150px]">
+          <SelectValue placeholder={t('bots.groupTrigger')} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="mention">
+            {t('bots.groupTriggerMention')}
+          </SelectItem>
+          <SelectItem value="all">{t('bots.groupTriggerAll')}</SelectItem>
+        </SelectContent>
+      </Select>
 
       <span className="text-sm text-muted-foreground shrink-0">→</span>
 
@@ -379,6 +401,7 @@ export default function RoutingRulesEditor({
         operator: 'eq',
         value: '',
         pipeline_uuid: '',
+        group_trigger: 'mention',
       },
     ]);
   };

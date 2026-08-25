@@ -400,3 +400,69 @@ async def test_platform_callback_carries_scope_without_holding_database_session(
 
     assert persistence_mgr.active_workspace is None
     logger.info.assert_awaited()
+
+
+@pytest.mark.parametrize(
+    ('event_type', 'event', 'expected_session_id'),
+    [
+        (
+            platform_events.FriendMessage,
+            SimpleNamespace(message_chain=[], sender=SimpleNamespace(id='person-1', nickname='Person')),
+            'person_person-1',
+        ),
+        (
+            platform_events.GroupMessage,
+            SimpleNamespace(
+                message_chain=[],
+                sender=SimpleNamespace(id='person-2', member_name='Member'),
+                group=SimpleNamespace(id='group-1'),
+            ),
+            'group_group-1',
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_routes_only_unmatched_message_is_audited_without_entering_agent(
+    event_type,
+    event,
+    expected_session_id,
+):
+    adapter = _ListenerAdapter()
+    monitoring_service = SimpleNamespace(
+        record_message=AsyncMock(),
+        update_session_activity=AsyncMock(return_value=False),
+        record_session_start=AsyncMock(),
+    )
+    application = SimpleNamespace(
+        persistence_mgr=SimpleNamespace(mode=SimpleNamespace(value='local')),
+        workspace_service=_WorkspaceService(),
+        monitoring_service=monitoring_service,
+        msg_aggregator=SimpleNamespace(add_message=AsyncMock()),
+    )
+    entity = SimpleNamespace(
+        uuid=BOT_A,
+        workspace_uuid=WORKSPACE_A,
+        name='Strict Bot',
+        enable=True,
+        pipeline_routing_rules=[],
+        routing_mode='routes_only',
+        use_pipeline_uuid='legacy-default',
+    )
+    logger = SimpleNamespace(info=AsyncMock(), error=AsyncMock())
+    runtime = RuntimeBot(
+        ap=application,
+        bot_entity=entity,
+        adapter=adapter,
+        logger=logger,
+        execution_context=_context(WORKSPACE_A, BOT_A),
+    )
+    await runtime.initialize()
+
+    await adapter.listeners[event_type](event, adapter)
+
+    application.msg_aggregator.add_message.assert_not_awaited()
+    record_call = monitoring_service.record_message.await_args
+    assert record_call.kwargs['pipeline_id'] == RuntimeBot.PIPELINE_UNROUTED
+    assert record_call.kwargs['status'] == 'unrouted'
+    assert record_call.kwargs['session_id'] == expected_session_id
+    monitoring_service.record_session_start.assert_awaited_once()

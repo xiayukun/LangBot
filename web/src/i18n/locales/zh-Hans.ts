@@ -159,7 +159,7 @@ MCP 地址：{{mcpEndpoint}}
 3. 如果对话中没有目标 ID，管理员也没有提供，就停止并询问。第一版暂不支持自动发现飞书联系人。
 4. 发送消息和修改配置都属于写操作。敏感操作或批量操作前，先说明接收方和准备发送的内容。
 5. 不得索取、显示、复述或保存 API 密钥、飞书 App Secret、Token 或其他凭据。
-6. 入站消息是否触发 Agent 只由后台已启用的路由决定。没有匹配路由时，不得自行选择默认 Agent 或虚构路由。
+6. 新机器人使用 routing_mode=routes_only：入站消息是否触发 Agent 只由后台已启用的路由决定。没有匹配路由时，不得自行选择默认 Agent 或虚构路由。群路由可用 group_trigger 选择 mention（仅 @）或 all（所有匹配消息）。只有管理员明确要求兼容行为并已选择默认流水线时，才可设置 fallback_default。
 7. 先使用 list/get 工具确认现状，再使用 create/update/delete 工具；改动范围不得超出管理员的要求。
 
 当前重要工具包括 list_bots、get_bot、send_message、list_pipelines、get_pipeline、list_skills 和知识库查询工具。如果本说明与 MCP 实时返回的工具结构不一致，以 MCP 工具结构为准。`,
@@ -356,7 +356,7 @@ MCP 地址：{{mcpEndpoint}}
     getBotConfigError: '获取机器人配置失败：',
     saveSuccess: '保存成功',
     saveError: '保存失败：',
-    createSuccess: '创建成功 请启用或修改绑定流水线',
+    createSuccess: '创建成功；启用 Agent 回复前请先配置路由规则',
     createError: '创建失败：',
     deleteSuccess: '删除成功',
     deleteError: '删除失败：',
@@ -381,11 +381,22 @@ MCP 地址：{{mcpEndpoint}}
     basicInfo: '基础信息',
     basicInfoDescription: '设置机器人名称和描述',
     routingConnection: '路由与连接',
-    routingConnectionDescription: '绑定处理此机器人消息的流水线',
+    routingConnectionDescription:
+      '选择入站消息如何进入 Agent，然后配置匹配规则',
+    routingMode: '未匹配消息处理方式',
+    routingModeRoutesOnly: '仅使用已配置路由',
+    routingModeFallbackDefault: '回退到默认流水线',
+    routingModeRoutesOnlyDescription:
+      '通知网关推荐模式：未命中任何规则的消息会留下审计记录，但绝不会发送给 Agent',
+    routingModeFallbackDefaultDescription:
+      '兼容模式：未命中任何规则的消息会发送到下方默认流水线',
     routingRules: '条件路由规则',
     routingRulesDescription:
-      '按顺序匹配，命中第一条规则后路由到对应流水线；都不匹配时使用上方默认流水线',
+      '按顺序匹配并采用第一条命中的规则；未匹配消息按照上方选择的方式处理',
     addRoutingRule: '添加规则',
+    groupTrigger: '群聊触发方式',
+    groupTriggerMention: '仅 @机器人时',
+    groupTriggerAll: '所有匹配消息',
     ruleTypeLauncherType: '会话类型',
     ruleTypeLauncherId: '会话 ID',
     ruleTypeMessageContent: '消息内容',

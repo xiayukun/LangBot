@@ -14,7 +14,11 @@ from types import SimpleNamespace
 import uuid
 
 from langbot.pkg.api.http.service.bot import BotService
-from langbot.pkg.entity.persistence.bot import Bot
+from langbot.pkg.entity.persistence.bot import (
+    ROUTING_MODE_FALLBACK_DEFAULT,
+    ROUTING_MODE_ROUTES_ONLY,
+    Bot,
+)
 
 
 pytestmark = pytest.mark.asyncio
@@ -372,6 +376,33 @@ class TestBotServiceCreateBot:
         assert bot_uuid is not None
         assert len(bot_uuid) == 36  # UUID format
 
+    async def test_create_bot_defaults_to_routes_only_without_binding_latest_pipeline(self):
+        ap = SimpleNamespace(
+            persistence_mgr=SimpleNamespace(),
+            instance_config=SimpleNamespace(data={'system': {'limitation': {'max_bots': -1}}}),
+            platform_mgr=SimpleNamespace(load_bot=AsyncMock()),
+        )
+        inserted = None
+
+        async def mock_execute(statement):
+            nonlocal inserted
+            if statement.is_insert:
+                inserted = statement.compile().params
+                return Mock()
+            return _create_mock_result(first_item=_create_mock_bot())
+
+        ap.persistence_mgr.execute_async = AsyncMock(side_effect=mock_execute)
+        ap.persistence_mgr.serialize_model = Mock(return_value={'uuid': 'new-uuid', 'name': 'New Bot'})
+        service = BotService(ap)
+
+        await service.create_bot(
+            WORKSPACE_UUID,
+            {'name': 'New Bot', 'adapter': 'telegram', 'adapter_config': {}},
+        )
+
+        assert inserted['routing_mode'] == ROUTING_MODE_ROUTES_ONLY
+        assert 'use_pipeline_uuid' not in inserted
+
     async def test_create_bot_sets_default_pipeline(self):
         """Sets default pipeline when one exists."""
         # Setup
@@ -417,17 +448,75 @@ class TestBotServiceCreateBot:
         service = BotService(ap)
 
         # Execute
-        bot_data = {'name': 'New Bot', 'adapter': 'telegram', 'adapter_config': {}}
+        bot_data = {
+            'name': 'New Bot',
+            'adapter': 'telegram',
+            'adapter_config': {},
+            'routing_mode': ROUTING_MODE_FALLBACK_DEFAULT,
+        }
         bot_uuid = await service.create_bot(WORKSPACE_UUID, bot_data)
 
         # The service owns a copy and cannot mutate caller input while adding tenant data.
-        assert bot_data == {'name': 'New Bot', 'adapter': 'telegram', 'adapter_config': {}}
+        assert bot_data == {
+            'name': 'New Bot',
+            'adapter': 'telegram',
+            'adapter_config': {},
+            'routing_mode': ROUTING_MODE_FALLBACK_DEFAULT,
+        }
         insert_statement = ap.persistence_mgr.execute_async.await_args_list[1].args[0]
         insert_values = insert_statement.compile().params
         assert insert_values['workspace_uuid'] == WORKSPACE_UUID
         assert insert_values['use_pipeline_uuid'] == 'default-pipeline-uuid'
         assert insert_values['use_pipeline_name'] == 'Default Pipeline'
         assert bot_uuid is not None  # Verify UUID was returned
+
+    async def test_create_fallback_bot_keeps_explicit_default_pipeline(self):
+        ap = SimpleNamespace(
+            persistence_mgr=SimpleNamespace(),
+            instance_config=SimpleNamespace(data={'system': {'limitation': {'max_bots': -1}}}),
+            platform_mgr=SimpleNamespace(load_bot=AsyncMock()),
+        )
+        selected_pipeline = SimpleNamespace(uuid='selected-pipeline', name='Selected Pipeline')
+        query_result = _create_mock_result(first_item=selected_pipeline)
+        inserted = None
+
+        async def mock_execute(statement):
+            nonlocal inserted
+            if statement.is_insert:
+                inserted = statement.compile().params
+                return Mock()
+            if inserted is None:
+                assert 'selected-pipeline' in statement.compile().params.values()
+                return query_result
+            return _create_mock_result(first_item=_create_mock_bot())
+
+        ap.persistence_mgr.execute_async = AsyncMock(side_effect=mock_execute)
+        ap.persistence_mgr.serialize_model = Mock(return_value={'uuid': 'new-uuid', 'name': 'New Bot'})
+        service = BotService(ap)
+
+        await service.create_bot(
+            WORKSPACE_UUID,
+            {
+                'name': 'New Bot',
+                'adapter': 'telegram',
+                'adapter_config': {},
+                'routing_mode': ROUTING_MODE_FALLBACK_DEFAULT,
+                'use_pipeline_uuid': 'selected-pipeline',
+            },
+        )
+
+        assert inserted['use_pipeline_uuid'] == 'selected-pipeline'
+        assert inserted['use_pipeline_name'] == 'Selected Pipeline'
+
+    async def test_create_bot_rejects_unknown_routing_mode(self):
+        ap = SimpleNamespace(
+            persistence_mgr=SimpleNamespace(execute_async=AsyncMock()),
+            instance_config=SimpleNamespace(data={'system': {'limitation': {'max_bots': -1}}}),
+        )
+        service = BotService(ap)
+
+        with pytest.raises(ValueError, match='routing_mode'):
+            await service.create_bot(WORKSPACE_UUID, {'routing_mode': 'unsafe-fallback'})
 
 
 class TestBotServiceUpdateBot:
@@ -479,6 +568,13 @@ class TestBotServiceUpdateBot:
         with pytest.raises(Exception, match='Pipeline not found'):
             await service.update_bot(WORKSPACE_UUID, 'test-uuid', {'use_pipeline_uuid': 'nonexistent-pipeline'})
 
+    async def test_update_bot_rejects_unknown_routing_mode(self):
+        ap = SimpleNamespace(persistence_mgr=SimpleNamespace(execute_async=AsyncMock()))
+        service = BotService(ap)
+
+        with pytest.raises(ValueError, match='routing_mode'):
+            await service.update_bot(WORKSPACE_UUID, 'test-uuid', {'routing_mode': 'unsafe-fallback'})
+
     async def test_update_bot_sets_pipeline_name(self):
         """Sets use_pipeline_name when updating use_pipeline_uuid."""
         # Setup
@@ -519,6 +615,30 @@ class TestBotServiceUpdateBot:
         update_params = ap.persistence_mgr.execute_async.await_args_list[1].args[0].compile().params
         assert update_params['use_pipeline_uuid'] == 'pipeline-uuid'
         assert update_params['use_pipeline_name'] == 'Updated Pipeline'
+
+    async def test_update_bot_allows_clearing_default_pipeline(self):
+        ap = SimpleNamespace(
+            persistence_mgr=SimpleNamespace(execute_async=AsyncMock()),
+            platform_mgr=SimpleNamespace(remove_bot=AsyncMock()),
+            sess_mgr=SimpleNamespace(session_list=[]),
+        )
+        service = BotService(ap)
+        service.get_bot = AsyncMock(return_value={'uuid': 'test-uuid'})
+        ap.platform_mgr.load_bot = AsyncMock(return_value=SimpleNamespace(enable=False))
+
+        await service.update_bot(
+            WORKSPACE_UUID,
+            'test-uuid',
+            {
+                'routing_mode': ROUTING_MODE_ROUTES_ONLY,
+                'use_pipeline_uuid': '',
+            },
+        )
+
+        update_statement = ap.persistence_mgr.execute_async.await_args_list[0].args[0]
+        update_params = update_statement.compile().params
+        assert update_params['use_pipeline_uuid'] is None
+        assert update_params['use_pipeline_name'] is None
 
 
 class TestBotServiceDeleteBot:

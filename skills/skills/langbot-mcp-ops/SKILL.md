@@ -100,6 +100,22 @@ Never guess a bot UUID or target ID. If no configured target is available, ask
 the operator for one. Do not request, echo, or place platform credentials or API
 keys in tool arguments.
 
+Bot inbound routing is explicit:
+
+- New bots default to `routing_mode: "routes_only"`. An inbound message that
+  matches no enabled rule is audited as `unrouted` and does not enter an Agent
+  pipeline.
+- Bots migrated from an older LangBot database use
+  `routing_mode: "fallback_default"` so their existing default-pipeline behavior
+  remains intact.
+- Set `fallback_default` on a new bot only when the operator explicitly asks for
+  compatibility behavior and has selected `use_pipeline_uuid`. Unknown routing
+  modes are rejected by the service and fail closed at runtime.
+- Each routing rule may set `group_trigger` to `mention` (only when the bot is
+  explicitly mentioned) or `all` (every group message matching that rule).
+  Existing rules without the field keep `all`; new UI-created rules default to
+  `mention`.
+
 ## How to use
 
 1. Get an API key (web UI key, or set `api.global_api_key` in config.yaml).
