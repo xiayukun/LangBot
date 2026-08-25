@@ -219,6 +219,60 @@ export interface Bot {
   adapter_runtime_values?: object;
 }
 
+export type NotificationTargetType = 'person' | 'group';
+
+export interface NotificationTarget {
+  uuid: string;
+  name: string;
+  bot_uuid: string;
+  target_type: NotificationTargetType;
+  target_id: string;
+  enabled: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type NotificationTargetInput = Omit<
+  NotificationTarget,
+  'uuid' | 'created_at' | 'updated_at'
+>;
+
+export interface ApiRespNotificationTargets {
+  targets: NotificationTarget[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
+export interface ApiRespNotificationTarget {
+  target: NotificationTarget;
+}
+
+export interface NotificationOutcome {
+  target_uuid: string | null;
+  target_name: string;
+  bot_uuid: string;
+  target_type: NotificationTargetType;
+  target_id: string;
+  status: 'pending' | 'sent' | 'failed';
+  error: string | null;
+}
+
+export interface NotificationJob {
+  uuid: string;
+  idempotency_key: string;
+  status: 'pending' | 'succeeded' | 'partial_failed' | 'failed';
+  message_chain: Array<Record<string, unknown>>;
+  created_at?: string;
+  updated_at?: string;
+  replayed: boolean;
+  outcomes: NotificationOutcome[];
+}
+
+export interface ApiRespNotificationJob {
+  job: NotificationJob;
+}
+
 export type RoutingRuleOperator =
   | 'eq'
   | 'neq'

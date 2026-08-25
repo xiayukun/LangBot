@@ -57,6 +57,24 @@ def build_ap() -> SimpleNamespace:
         get_bots=AsyncMock(return_value=[{'uuid': 'bot-1', 'name': 'Demo Bot', 'adapter': 'telegram'}]),
         send_message=AsyncMock(),
     )
+    ap.notification_service = SimpleNamespace(
+        list_targets=AsyncMock(
+            return_value={
+                'targets': [{'uuid': 'target-1', 'name': 'Demo target'}],
+                'total': 1,
+                'offset': 0,
+                'limit': 50,
+            }
+        ),
+        send_notification=AsyncMock(
+            return_value={
+                'uuid': 'job-1',
+                'status': 'succeeded',
+                'replayed': False,
+                'outcomes': [{'target_uuid': 'target-1', 'status': 'sent'}],
+            }
+        ),
+    )
     ap.pipeline_service = SimpleNamespace(get_pipelines=AsyncMock(return_value=[{'uuid': 'pl-1', 'name': 'default'}]))
     ap.llm_model_service = SimpleNamespace(get_llm_models=AsyncMock(return_value=[]))
     ap.embedding_models_service = SimpleNamespace(get_embedding_models=AsyncMock(return_value=[]))
@@ -114,7 +132,15 @@ async def main() -> int:
             tools = await session.list_tools()
             names = [t.name for t in tools.tools]
             print(f'PASS: listed {len(names)} tools')
-            for required in ('list_bots', 'get_system_info', 'list_skills', 'send_message'):
+            for required in (
+                'list_bots',
+                'get_system_info',
+                'list_skills',
+                'send_message',
+                'list_notification_targets',
+                'send_notification',
+                'get_notification_job',
+            ):
                 if required not in names:
                     failures.append(f'missing tool {required}')
 
@@ -148,6 +174,26 @@ async def main() -> int:
             else:
                 ap.bot_service.send_message.assert_awaited_once()
                 print('PASS: send_message delegated through the authenticated service')
+
+            managed = await session.call_tool('list_notification_targets', {})
+            managed_text = managed.content[0].text if managed.content else ''
+            if 'Demo target' not in managed_text:
+                failures.append(f'list_notification_targets wrong: {managed_text!r}')
+
+            notification = await session.call_tool(
+                'send_notification',
+                {
+                    'target_ids': ['target-1'],
+                    'message_chain': [{'type': 'Plain', 'text': 'Managed smoke test'}],
+                    'idempotency_key': 'mcp-smoke-managed-send',
+                },
+            )
+            notification_text = notification.content[0].text if notification.content else ''
+            if '"status": "succeeded"' not in notification_text:
+                failures.append(f'send_notification wrong: {notification_text!r}')
+            else:
+                ap.notification_service.send_notification.assert_awaited_once()
+                print('PASS: managed notification delegated through the authenticated service')
 
     shutdown.set()
     with contextlib.suppress(Exception):

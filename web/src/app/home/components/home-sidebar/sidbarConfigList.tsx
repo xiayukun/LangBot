@@ -8,6 +8,7 @@ import {
   BookMarked,
   Puzzle,
   PlusCircle,
+  BellRing,
 } from 'lucide-react';
 
 const t = (key: string) => {
@@ -52,6 +53,18 @@ export const sidebarConfigList = [
       en_US: 'https://link.langbot.app/en/docs/platforms',
       zh_Hans: 'https://link.langbot.app/zh/docs/platforms',
       ja_JP: 'https://link.langbot.app/ja/docs/platforms',
+    },
+    section: 'home',
+  }),
+  new SidebarChildVO({
+    id: 'notifications',
+    name: t('notifications.title'),
+    icon: <BellRing className="text-blue-500" />,
+    route: '/home/notifications',
+    description: t('notifications.description'),
+    helpLink: {
+      en_US: '',
+      zh_Hans: '',
     },
     section: 'home',
   }),

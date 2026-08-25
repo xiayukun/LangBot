@@ -154,15 +154,15 @@ const zhHans = {
 MCP 地址：{{mcpEndpoint}}
 
 操作规则：
-1. 操作前先发现资源。选择机器人之前调用 list_bots，不得猜测 UUID 或飞书目标 ID。
-2. 发送消息时调用 send_message，并提供 bot_uuid、target_type（person 或 group）、target_id 和 LangBot message_chain。
-3. 如果对话中没有目标 ID，管理员也没有提供，就停止并询问。第一版暂不支持自动发现飞书联系人。
+1. 发送通知前先调用 list_notification_targets，只选择管理员已经配置的目标 UUID；不得猜测目标 UUID、机器人 UUID 或飞书目标 ID。
+2. 调用 send_notification 时提供一个或多个已发现的 target_ids、非空的 LangBot message_chain（例如 [{"type":"Plain","text":"服务已恢复"}]）和稳定的 idempotency_key。重试同一次发送时复用该键，不得把它用于不同内容或目标。
+3. 使用 get_notification_job 查看每个目标的发送结果。只有管理员明确需要尚未纳管的一次性目标时，才使用 list_bots 和 send_message。
 4. 发送消息和修改配置都属于写操作。敏感操作或批量操作前，先说明接收方和准备发送的内容。
 5. 不得索取、显示、复述或保存 API 密钥、飞书 App Secret、Token 或其他凭据。
 6. 新机器人使用 routing_mode=routes_only：入站消息是否触发 Agent 只由后台已启用的路由决定。没有匹配路由时，不得自行选择默认 Agent 或虚构路由。群路由可用 group_trigger 选择 mention（仅 @）或 all（所有匹配消息）。只有管理员明确要求兼容行为并已选择默认流水线时，才可设置 fallback_default。
 7. 先使用 list/get 工具确认现状，再使用 create/update/delete 工具；改动范围不得超出管理员的要求。
 
-当前重要工具包括 list_bots、get_bot、send_message、list_pipelines、get_pipeline、list_skills 和知识库查询工具。如果本说明与 MCP 实时返回的工具结构不一致，以 MCP 工具结构为准。`,
+当前重要工具包括 list_notification_targets、send_notification、get_notification_job、list_bots、send_message、list_pipelines、get_pipeline、list_skills 和知识库查询工具。如果本说明与 MCP 实时返回的工具结构不一致，以 MCP 工具结构为准。`,
     webhooks: 'Webhooks',
     createWebhook: '创建 Webhook',
     webhookName: 'Webhook 名称',
@@ -338,6 +338,65 @@ MCP 地址：{{mcpEndpoint}}
       primary: '主模型',
       fallbackList: '备用模型',
       addFallback: '添加备用模型',
+    },
+  },
+  notifications: {
+    title: '通知中心',
+    description: '统一管理可复用的私聊和群聊目标，并一次可靠地发送到多个目标。',
+    refresh: '刷新',
+    createTarget: '添加目标',
+    editTarget: '编辑目标',
+    deleteTarget: '删除目标',
+    managedTargets: '已管理的发送目标',
+    targetCount: '共 {{count}} 个目标',
+    targetName: '名称',
+    targetId: '平台目标 ID',
+    type: '类型',
+    bot: '机器人',
+    state: '状态',
+    actions: '操作',
+    enabled: '已启用',
+    disabled: '已停用',
+    enabledHint: '停用后，该目标不能被选择发送。',
+    targetTypes: { person: '私聊', group: '群聊' },
+    selectAll: '选择所有已启用目标',
+    selectTarget: '选择 {{name}}',
+    selectBot: '选择机器人',
+    namePlaceholder: '例如：运维通知群',
+    targetIdPlaceholder: '飞书 open_id 或 chat_id',
+    targetIdHint: '请填写该机器人适配器能识别的 ID；这里不会保存平台凭据。',
+    formDescription:
+      '给机器人能够到达的私聊或群聊设置一个名称，供 API、MCP 和后台重复使用。',
+    requiredFields: '名称、机器人和平台目标 ID 都是必填项。',
+    createSuccess: '通知目标已创建',
+    updateSuccess: '通知目标已更新',
+    deleteSuccess: '通知目标已删除',
+    loadError: '加载通知目标失败：{{error}}',
+    saveError: '保存通知目标失败：{{error}}',
+    deleteError: '删除通知目标失败：{{error}}',
+    deleteConfirmation: '确定删除“{{name}}”吗？已有的发送历史仍会保留。',
+    deleting: '删除中...',
+    emptyTitle: '还没有通知目标',
+    emptyDescription: '添加一个现有机器人可以到达的私聊或群聊。',
+    testSend: '编辑并发送通知',
+    chooseTargetsBelow: '请在下方列表选择一个或多个已启用目标。',
+    messagePlaceholder: '输入要发送的通知内容……',
+    idempotencyHint: '网络错误后重试会复用同一请求标识，不会重复发送。',
+    selectAtLeastOne: '请至少选择一个已启用目标。',
+    messageRequired: '请输入通知内容。',
+    sendNow: '发送通知',
+    sending: '发送中...',
+    sendSuccess: '通知已发送到全部目标',
+    partialFailed: '部分目标暂时无法到达',
+    sendFailed: '通知未能发送成功',
+    sendError: '发送通知失败：{{error}}',
+    lastResult: '最近一次发送结果',
+    status: {
+      pending: '等待中',
+      succeeded: '全部成功',
+      partial_failed: '部分失败',
+      failed: '失败',
+      sent: '已发送',
     },
   },
   bots: {

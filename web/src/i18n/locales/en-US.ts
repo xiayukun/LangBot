@@ -163,15 +163,15 @@ const enUS = {
 MCP endpoint: {{mcpEndpoint}}
 
 Operating rules:
-1. Discover resources before acting. Call list_bots before choosing a bot, and never guess a UUID or Feishu target ID.
-2. To send a message, call send_message with bot_uuid, target_type (person or group), target_id, and a LangBot message_chain.
-3. If the target ID is not already present in the conversation or supplied by the operator, stop and ask for it. The first version cannot discover Feishu contacts automatically.
+1. For notifications, call list_notification_targets first and select only target UUIDs configured by the operator. Never guess a target UUID, bot UUID, or Feishu target ID.
+2. Call send_notification with one or more discovered target_ids, a non-empty LangBot message_chain such as [{"type":"Plain","text":"Service restored"}], and a stable idempotency_key. Reuse the same key when retrying the same intended send; never reuse it for different content or targets.
+3. Use get_notification_job to inspect every target outcome. Use list_bots plus send_message only when the operator explicitly needs a one-off, unmanaged destination.
 4. Treat message sending and configuration changes as writes. Explain the intended recipient and content before a sensitive or broad action.
 5. Never request, expose, repeat, or store API keys, Feishu App Secrets, tokens, or other credentials.
 6. New bots use routing_mode=routes_only: inbound Agent execution is controlled only by enabled backend routes. Do not invent a fallback Agent or route when no match exists. A group route may set group_trigger to mention or all. Set fallback_default only when the operator explicitly requests compatibility behavior and has selected a default pipeline.
 7. Use list/get tools before create/update/delete tools. Keep changes scoped to the operator's request.
 
-Important tools currently include list_bots, get_bot, send_message, list_pipelines, get_pipeline, list_skills, and knowledge-base inspection tools. Tool schemas returned by MCP are authoritative if this text and the live server differ.`,
+Important tools currently include list_notification_targets, send_notification, get_notification_job, list_bots, send_message, list_pipelines, get_pipeline, list_skills, and knowledge-base inspection tools. Tool schemas returned by MCP are authoritative if this text and the live server differ.`,
     webhooks: 'Webhooks',
     createWebhook: 'Create Webhook',
     webhookName: 'Webhook Name',
@@ -353,6 +353,70 @@ Important tools currently include list_bots, get_bot, send_message, list_pipelin
       primary: 'Primary Model',
       fallbackList: 'Fallback Models',
       addFallback: 'Add Fallback Model',
+    },
+  },
+  notifications: {
+    title: 'Notifications',
+    description:
+      'Manage reusable people and groups, then send one reliable notification to multiple destinations.',
+    refresh: 'Refresh',
+    createTarget: 'Add target',
+    editTarget: 'Edit target',
+    deleteTarget: 'Delete target',
+    managedTargets: 'Managed targets',
+    targetCount: '{{count}} target(s)',
+    targetName: 'Name',
+    targetId: 'Platform target ID',
+    type: 'Type',
+    bot: 'Bot',
+    state: 'State',
+    actions: 'Actions',
+    enabled: 'Enabled',
+    disabled: 'Disabled',
+    enabledHint: 'Disabled targets cannot be selected for sending.',
+    targetTypes: { person: 'Person', group: 'Group' },
+    selectAll: 'Select all enabled targets',
+    selectTarget: 'Select {{name}}',
+    selectBot: 'Select a bot',
+    namePlaceholder: 'For example: Operations group',
+    targetIdPlaceholder: 'Feishu open_id or chat_id',
+    targetIdHint:
+      'Use the ID recognized by this bot adapter. Credentials are never stored here.',
+    formDescription:
+      'Give a reachable person or group a reusable name for API, MCP, and dashboard sends.',
+    requiredFields: 'Name, bot, and platform target ID are required.',
+    createSuccess: 'Notification target created',
+    updateSuccess: 'Notification target updated',
+    deleteSuccess: 'Notification target deleted',
+    loadError: 'Failed to load notification targets: {{error}}',
+    saveError: 'Failed to save notification target: {{error}}',
+    deleteError: 'Failed to delete notification target: {{error}}',
+    deleteConfirmation:
+      'Delete “{{name}}”? Existing delivery history remains available.',
+    deleting: 'Deleting...',
+    emptyTitle: 'No notification targets yet',
+    emptyDescription: 'Add a person or group that an existing bot can reach.',
+    testSend: 'Compose a notification',
+    chooseTargetsBelow:
+      'Select one or more enabled targets in the table below.',
+    messagePlaceholder: 'Write the notification to send...',
+    idempotencyHint:
+      'Retries after a network error reuse the same request key and will not send twice.',
+    selectAtLeastOne: 'Select at least one enabled target.',
+    messageRequired: 'Enter a notification message.',
+    sendNow: 'Send notification',
+    sending: 'Sending...',
+    sendSuccess: 'Notification delivered to every target',
+    partialFailed: 'Some targets could not be reached',
+    sendFailed: 'The notification could not be delivered',
+    sendError: 'Failed to send notification: {{error}}',
+    lastResult: 'Latest delivery result',
+    status: {
+      pending: 'Pending',
+      succeeded: 'Succeeded',
+      partial_failed: 'Partially failed',
+      failed: 'Failed',
+      sent: 'Sent',
     },
   },
   bots: {

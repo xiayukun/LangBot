@@ -12,6 +12,10 @@ import {
   ApiRespPlatformBots,
   ApiRespPlatformBot,
   Bot,
+  ApiRespNotificationTargets,
+  ApiRespNotificationTarget,
+  ApiRespNotificationJob,
+  NotificationTargetInput,
   ApiRespPlugins,
   ApiRespPlugin,
   ApiRespPluginConfig,
@@ -431,6 +435,47 @@ export class BackendClient extends BaseHttpClient {
 
   public deleteBot(uuid: string): Promise<object> {
     return this.delete(`/api/v1/platform/bots/${uuid}`);
+  }
+
+  // ============ Managed Notifications ============
+  public getNotificationTargets(
+    offset: number = 0,
+    limit: number = 100,
+  ): Promise<ApiRespNotificationTargets> {
+    return this.get('/api/v1/notification-targets', { offset, limit });
+  }
+
+  public createNotificationTarget(
+    target: NotificationTargetInput,
+  ): Promise<ApiRespNotificationTarget> {
+    return this.post('/api/v1/notification-targets', target);
+  }
+
+  public updateNotificationTarget(
+    uuid: string,
+    target: Partial<NotificationTargetInput>,
+  ): Promise<ApiRespNotificationTarget> {
+    return this.put(`/api/v1/notification-targets/${uuid}`, target);
+  }
+
+  public deleteNotificationTarget(uuid: string): Promise<object> {
+    return this.delete(`/api/v1/notification-targets/${uuid}`);
+  }
+
+  public sendNotification(
+    targetIds: string[],
+    messageChain: Array<Record<string, unknown>>,
+    idempotencyKey: string,
+  ): Promise<ApiRespNotificationJob> {
+    return this.post(
+      '/api/v1/notifications',
+      { targetIds, messageChain },
+      { headers: { 'Idempotency-Key': idempotencyKey } },
+    );
+  }
+
+  public getNotificationJob(uuid: string): Promise<ApiRespNotificationJob> {
+    return this.get(`/api/v1/notifications/${uuid}`);
   }
 
   public getBotAdmins(botId: string): Promise<{

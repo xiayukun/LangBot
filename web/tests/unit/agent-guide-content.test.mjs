@@ -96,4 +96,14 @@ test('the API integration panel exposes a translated Agent Guide tab', () => {
       assert.match(source, new RegExp(`\\b${key}:`), `${locale} misses ${key}`);
     }
   }
+
+  for (const locale of ['en-US.ts', 'zh-Hans.ts']) {
+    const source = fs.readFileSync(
+      path.join(webRoot, 'src/i18n/locales', locale),
+      'utf8',
+    );
+    assert.match(source, /list_notification_targets/);
+    assert.match(source, /send_notification/);
+    assert.match(source, /get_notification_job/);
+  }
 });

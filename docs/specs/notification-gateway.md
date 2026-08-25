@@ -288,8 +288,11 @@ Trust boundaries are HTTP/MCP requests, Feishu events, Agent connector responses
 - [x] Add target and notification job/attempt entities with idempotency constraints.
 - [x] Add target CRUD and paginated listing.
 - [x] Add asynchronous fan-out using the existing runtime adapters with bounded concurrency.
-- [ ] Add HTTP and matching MCP operations plus test-send UI.
-- Verification: unit, API, persistence, MCP, and failure/retry tests.
+- [x] Add HTTP and matching MCP operations plus test-send UI.
+- Verification: notification service, HTTP, MCP, and SQLite migration tests;
+  frontend unit tests, targeted ESLint, and production build. Browser-surface
+  verification remains pending because this Codex environment exposes no
+  registered Browser or Chrome runtime tool.
 
 ### Slice 4: Agent connectors and durable context
 
