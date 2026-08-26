@@ -1,3 +1,20 @@
+# Feishu Agent Hub
+
+> Этот проект является независимой доработкой LangBot и не относится к официальным дистрибутивам LangBot.
+
+**Шлюз уведомлений Feishu, маршрутизатор сообщений и платформа вызова Agents на базе LangBot.**
+
+## Основные изменения проекта
+
+Feishu Agent Hub сохраняет базовые возможности ботов и Agents из LangBot и добавляет функции для использования Feishu как программируемого канала уведомлений и точки входа для Agents:
+
+- **Управляемый центр уведомлений**: личные и групповые чаты Feishu, доступные боту, сохраняются как повторно используемые адресаты. Интерфейс, HTTP API и MCP позволяют отправлять сообщения одному или нескольким адресатам, применять ключи идемпотентности и хранить результат по каждому адресату.
+- **Явная маршрутизация входящих сообщений**: бот может работать только по настроенным маршрутам. Сообщения без подходящего маршрута сохраняются, но не вызывают Agent. Для групп можно выбрать срабатывание только по упоминанию или для всех подходящих сообщений.
+- **Коннекторы внешних Agents**: администратор задаёт endpoint Agent, системный prompt, разрешённые skills и endpoint MCP. В каждый вызов входят недавняя история и ещё не подтверждённые сообщения; курсор контекста перемещается только после явного принятия запроса Agent.
+- **API и MCP для Agents**: Agents могут находить разрешённых адресатов, отправлять уведомления, проверять результаты доставки и читать ресурсы маршрутизации. В интерфейсе доступны готовые для копирования Agent Guide и настройки MCP для Codex и других совместимых Agents.
+
+> Ниже сохранены исходное описание и документация LangBot, чтобы упростить синхронизацию с upstream. Архитектура Feishu Agent Hub описана в [`docs/specs/notification-gateway.md`](docs/specs/notification-gateway.md).
+
 <p align="center">
 <a href="https://langbot.app">
 <img width="130" src="res/logo-blue.png" alt="LangBot"/>
@@ -10,7 +27,7 @@
 <h3>Платформа производственного уровня для создания агентных IM-ботов.</h3>
 <h4>Быстро создавайте, отлаживайте и развертывайте ИИ-ботов в Slack, Discord, Telegram, WeChat и других платформах.</h4>
 
-[English](README.md) / [简体中文](README_CN.md) / [繁體中文](README_TW.md) / [日本語](README_JP.md) / [Español](README_ES.md) / [Français](README_FR.md) / [한국어](README_KO.md) / Русский / [Tiếng Việt](README_VI.md)
+[English](README_EN.md) / [简体中文](README.md) / [繁體中文](README_TW.md) / [日本語](README_JP.md) / [Español](README_ES.md) / [Français](README_FR.md) / [한국어](README_KO.md) / Русский / [Tiếng Việt](README_VI.md)
 
 [![Discord](https://img.shields.io/discord/1335141740050649118?logo=discord&labelColor=%20%235462eb&logoColor=%20%23f5f5f5&color=%20%235462eb)](https://discord.gg/wdNEHETs87)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/langbot-app/LangBot)

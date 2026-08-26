@@ -343,7 +343,7 @@ function SpaceOAuthCallbackContent() {
         <CardHeader className="text-center">
           <img
             src={langbotIcon}
-            alt="LangBot"
+            alt="Feishu Agent Hub"
             className="w-16 h-16 mb-4 mx-auto"
           />
           <CardTitle className="text-xl">

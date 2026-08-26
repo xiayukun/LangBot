@@ -1,3 +1,20 @@
+# Feishu Agent Hub
+
+> Dự án này được phát triển độc lập dựa trên LangBot và không phải là bản phân phối chính thức của LangBot.
+
+**Cổng thông báo Feishu, bộ định tuyến tin nhắn và nền tảng gọi Agent dựa trên LangBot.**
+
+## Những thay đổi chính của dự án
+
+Feishu Agent Hub giữ lại nền tảng bot và Agent của LangBot, đồng thời bổ sung các chức năng cần thiết để sử dụng Feishu như một kênh thông báo có thể lập trình và điểm vào cho Agent:
+
+- **Trung tâm thông báo được quản lý**: lưu các cuộc trò chuyện riêng và nhóm Feishu mà bot có thể truy cập thành các đích dùng lại. Giao diện quản trị, HTTP API và MCP có thể gửi đến một hoặc nhiều đích, dùng khóa idempotency để tránh công việc trùng lặp và lưu kết quả cho từng đích.
+- **Định tuyến đầu vào rõ ràng**: bot có thể chạy ở chế độ chỉ dùng các route đã cấu hình. Tin nhắn không khớp route vẫn được ghi lại nhưng không gọi Agent. Trong nhóm có thể chọn chỉ kích hoạt khi được nhắc tên hoặc với mọi tin nhắn phù hợp.
+- **Bộ kết nối Agent bên ngoài**: quản trị viên cấu hình endpoint của Agent, system prompt, các skill được phép và endpoint MCP. Mỗi lần gọi bao gồm lịch sử gần đây cùng các tin nhắn chưa được Agent xác nhận; con trỏ ngữ cảnh chỉ tiến lên sau khi Agent chấp nhận rõ ràng.
+- **API và MCP dành cho Agent**: Agent có thể khám phá các đích đã được cho phép, gửi thông báo, kiểm tra kết quả và đọc tài nguyên định tuyến. Giao diện cung cấp Agent Guide có thể sao chép cùng cấu hình MCP cho Codex và các Agent tương thích khác.
+
+> Phần giới thiệu và tài liệu gốc của LangBot được giữ lại bên dưới để thuận tiện đồng bộ với upstream. Xem [`docs/specs/notification-gateway.md`](docs/specs/notification-gateway.md) để biết thiết kế của Feishu Agent Hub.
+
 <p align="center">
 <a href="https://langbot.app">
 <img width="130" src="res/logo-blue.png" alt="LangBot"/>
@@ -10,7 +27,7 @@
 <h3>Nền tảng cấp sản xuất để xây dựng bot IM với AI agent.</h3>
 <h4>Xây dựng, gỡ lỗi và triển khai bot AI nhanh chóng trên Slack, Discord, Telegram, WeChat và nhiều nền tảng khác.</h4>
 
-[English](README.md) / [简体中文](README_CN.md) / [繁體中文](README_TW.md) / [日本語](README_JP.md) / [Español](README_ES.md) / [Français](README_FR.md) / [한국어](README_KO.md) / [Русский](README_RU.md) / Tiếng Việt
+[English](README_EN.md) / [简体中文](README.md) / [繁體中文](README_TW.md) / [日本語](README_JP.md) / [Español](README_ES.md) / [Français](README_FR.md) / [한국어](README_KO.md) / [Русский](README_RU.md) / Tiếng Việt
 
 [![Discord](https://img.shields.io/discord/1335141740050649118?logo=discord&labelColor=%20%235462eb&logoColor=%20%23f5f5f5&color=%20%235462eb)](https://discord.gg/wdNEHETs87)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/langbot-app/LangBot)

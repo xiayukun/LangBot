@@ -819,7 +819,7 @@ export default function DynamicFormComponent({
               import.meta.env.VITE_API_BASE_URL || window.location.origin;
             const widgetTitle =
               ((systemContext?.adapter_config as Record<string, unknown>)
-                ?.title as string) || 'LangBot';
+                ?.title as string) || 'Feishu Agent Hub';
             const safeTitle = widgetTitle
               .replace(/&/g, '&amp;')
               .replace(/"/g, '&quot;')

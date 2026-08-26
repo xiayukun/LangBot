@@ -1,3 +1,20 @@
+# Feishu Agent Hub
+
+> 本项目基于 LangBot 二次开发，与 LangBot 官方项目相互独立。
+
+**基于 LangBot 的飞书通知网关、消息路由与 Agent 调用平台。**
+
+## 本项目的主要改造
+
+Feishu Agent Hub 保留 LangBot 的机器人与 Agent 基础能力，并围绕“把飞书作为可编程通知与 Agent 入口”增加了以下功能：
+
+- **统一通知中心**：把机器人可到达的飞书私聊和群聊保存为可复用目标，通过后台、HTTP API 或 MCP 向一个或多个目标发送消息；发送任务支持幂等键，并记录每个目标的成功或失败状态。
+- **显式消息路由**：每个机器人可选择“仅使用已配置路由”。没有匹配路由时只保留消息记录，不调用任何 Agent；群聊路由可分别配置“仅被 @ 时触发”或“所有匹配消息触发”。
+- **外部 Agent 连接器**：后台可以配置 Agent 的调用地址、系统提示、允许使用的技能和 MCP 地址。触发时会提交最近历史以及 Agent 尚未确认的新消息，只有连接器明确接受请求后才推进上下文游标。
+- **面向 Agent 的 API 与 MCP**：Agent 可以发现管理员允许的通知目标、发送通知、查询发送结果和读取路由资源；后台提供可直接复制给 Codex 等 Agent 的使用说明与 MCP 客户端配置。
+
+> 下方保留 LangBot 上游项目的原始介绍和使用文档，便于继续同步上游能力。Feishu Agent Hub 的专项设计见 [`docs/specs/notification-gateway.md`](docs/specs/notification-gateway.md)。
+
 <p align="center">
 <a href="https://langbot.app">
 <img width="130" src="res/logo-blue.png" alt="LangBot"/>
@@ -10,7 +27,7 @@
 <h3>生产级 AI 即时通信机器人开发平台。</h3>
 <h4>快速构建、调试和部署 AI 机器人到微信、QQ、飞书、Slack、Discord、Telegram 等平台。</h4>
 
-[English](README.md) / 简体中文 / [繁體中文](README_TW.md) / [日本語](README_JP.md) / [Español](README_ES.md) / [Français](README_FR.md) / [한국어](README_KO.md) / [Русский](README_RU.md) / [Tiếng Việt](README_VI.md)
+[English](README_EN.md) / 简体中文 / [繁體中文](README_TW.md) / [日本語](README_JP.md) / [Español](README_ES.md) / [Français](README_FR.md) / [한국어](README_KO.md) / [Русский](README_RU.md) / [Tiếng Việt](README_VI.md)
 
 [![Discord](https://img.shields.io/discord/1335141740050649118?logo=discord&labelColor=%20%235462eb&logoColor=%20%23f5f5f5&color=%20%235462eb)](https://discord.gg/wdNEHETs87)
 [![QQ Group](https://img.shields.io/badge/%E7%A4%BE%E5%8C%BAQQ%E7%BE%A4-1030838208-blue)](https://qm.qq.com/q/IrlV8QFacU)

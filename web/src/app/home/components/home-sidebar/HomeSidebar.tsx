@@ -1938,16 +1938,18 @@ export default function HomeSidebar({
               <SidebarMenuButton
                 size="lg"
                 className="cursor-default hover:bg-transparent active:bg-transparent"
-                tooltip="LangBot"
+                tooltip="Feishu Agent Hub"
               >
                 <img
                   src={langbotIcon}
-                  alt="LangBot"
+                  alt="Feishu Agent Hub"
                   className="size-8 rounded-lg"
                 />
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <div className="flex items-center gap-1.5">
-                    <span className="truncate font-semibold">LangBot</span>
+                    <span className="truncate font-semibold">
+                      Feishu Agent Hub
+                    </span>
                     <Badge
                       variant="secondary"
                       className={`shrink-0 px-1 py-0 h-3.5 text-[0.55rem] font-medium ${

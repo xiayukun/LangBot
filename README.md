@@ -1,3 +1,20 @@
+# Feishu Agent Hub
+
+> 本项目基于 LangBot 二次开发，与 LangBot 官方项目相互独立。
+
+**基于 LangBot 的飞书通知网关、消息路由与 Agent 调用平台。**
+
+## 本项目的主要改造
+
+Feishu Agent Hub 保留 LangBot 的机器人与 Agent 基础能力，并围绕“把飞书作为可编程通知与 Agent 入口”增加了以下功能：
+
+- **统一通知中心**：把机器人可到达的飞书私聊和群聊保存为可复用目标，通过后台、HTTP API 或 MCP 向一个或多个目标发送消息；发送任务支持幂等键，并记录每个目标的成功或失败状态。
+- **显式消息路由**：每个机器人可选择“仅使用已配置路由”。没有匹配路由时只保留消息记录，不调用任何 Agent；群聊路由可分别配置“仅被 @ 时触发”或“所有匹配消息触发”。
+- **外部 Agent 连接器**：后台可以配置 Agent 的调用地址、系统提示、允许使用的技能和 MCP 地址。触发时会提交最近历史以及 Agent 尚未确认的新消息，只有连接器明确接受请求后才推进上下文游标。
+- **面向 Agent 的 API 与 MCP**：Agent 可以发现管理员允许的通知目标、发送通知、查询发送结果和读取路由资源；后台提供可直接复制给 Codex 等 Agent 的使用说明与 MCP 客户端配置。
+
+> 下方保留 LangBot 上游项目的原始介绍和使用文档，便于继续同步上游能力。Feishu Agent Hub 的专项设计见 [`docs/specs/notification-gateway.md`](docs/specs/notification-gateway.md)。
+
 <p align="center">
 <a href="https://langbot.app">
 <img width="130" src="res/logo-blue.png" alt="LangBot"/>
@@ -5,26 +22,28 @@
 
 <div align="center">
 
-<a href="https://www.producthunt.com/products/langbot/launches/langbot?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-langbot" target="_blank" rel="noopener noreferrer"><img alt="LangBot - Easy-to-use global IM bot platform designed for the LLM era | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=979554&amp;theme=light&amp;t=1782822143403"></a>
+<a href="https://hellogithub.com/repository/langbot-app/LangBot" target="_blank"><img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=5ce8ae2aa4f74316bf393b57b952433c&claim_uid=gtmc6YWjMZkT21R" alt="Featured｜HelloGitHub" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
-<h3>Production-grade platform for building agentic IM bots.</h3>
-<h4>Quickly build, debug, and ship AI bots to Slack, Discord, Telegram, WeChat, and more.</h4>
+<h3>生产级 AI 即时通信机器人开发平台。</h3>
+<h4>快速构建、调试和部署 AI 机器人到微信、QQ、飞书、Slack、Discord、Telegram 等平台。</h4>
 
-English / [简体中文](README_CN.md) / [繁體中文](README_TW.md) / [日本語](README_JP.md) / [Español](README_ES.md) / [Français](README_FR.md) / [한국어](README_KO.md) / [Русский](README_RU.md) / [Tiếng Việt](README_VI.md)
+[English](README_EN.md) / 简体中文 / [繁體中文](README_TW.md) / [日本語](README_JP.md) / [Español](README_ES.md) / [Français](README_FR.md) / [한국어](README_KO.md) / [Русский](README_RU.md) / [Tiếng Việt](README_VI.md)
 
 [![Discord](https://img.shields.io/discord/1335141740050649118?logo=discord&labelColor=%20%235462eb&logoColor=%20%23f5f5f5&color=%20%235462eb)](https://discord.gg/wdNEHETs87)
+[![QQ Group](https://img.shields.io/badge/%E7%A4%BE%E5%8C%BAQQ%E7%BE%A4-1030838208-blue)](https://qm.qq.com/q/IrlV8QFacU)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/langbot-app/LangBot)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/langbot-app/LangBot)](https://github.com/langbot-app/LangBot/releases/latest)
 <img src="https://img.shields.io/badge/python-3.10 ~ 3.13 -blue.svg" alt="python">
 [![GitHub stars](https://img.shields.io/github/stars/langbot-app/LangBot?style=social)](https://github.com/langbot-app/LangBot/stargazers)
+[![star](https://gitcode.com/RockChinQ/LangBot/star/badge.svg)](https://gitcode.com/RockChinQ/LangBot)
 
-<a href="https://langbot.app">Website</a> ｜
-<a href="https://link.langbot.app/en/docs/features">Features</a> ｜
-<a href="https://link.langbot.app/en/docs/guide">Docs</a> ｜
-<a href="https://link.langbot.app/en/docs/api">API</a> ｜
+<a href="https://langbot.app">官网</a> ｜
+<a href="https://link.langbot.app/zh/docs/features">特性</a> ｜
+<a href="https://link.langbot.app/zh/docs/guide">文档</a> ｜
+<a href="https://link.langbot.app/zh/docs/api">API</a> ｜
 <a href="https://space.langbot.app/cloud">Cloud</a> ｜
-<a href="https://space.langbot.app">Plugin Market</a> ｜
-<a href="https://langbot.featurebase.app/roadmap">Roadmap</a>
+<a href="https://space.langbot.app">扩展市场</a> ｜
+<a href="https://langbot.featurebase.app/roadmap">路线图</a>
 
 </div>
 
@@ -32,48 +51,46 @@ English / [简体中文](README_CN.md) / [繁體中文](README_TW.md) / [日本�
 
 ---
 
-## What is LangBot?
-
-LangBot is an **open-source, production-grade platform** for building AI-powered instant messaging bots. It connects Large Language Models (LLMs) to any chat platform, enabling you to create intelligent agents that can converse, execute tasks, and integrate with your existing workflows.
+LangBot 是一个**开源的生产级平台**，用于构建 AI 驱动的即时通信机器人。它将大语言模型（LLM）连接到各种聊天平台，帮助你创建能够对话、执行任务、并集成到现有工作流程中的智能 Agent。
 
 <p align="center">
-<img src="res/dashboard-overview.png" alt="LangBot web management dashboard — real-time monitoring of message volume, model calls, success rate and active sessions" width="720"/>
+<img src="res/dashboard-overview.png" alt="LangBot Web 管理面板仪表盘 — 实时监控消息量、模型调用、成功率与活跃会话" width="720"/>
 </p>
 
-### Key Capabilities
+### 核心能力
 
-- **AI Conversations & Agents** — Multi-turn dialogues, tool calling, multi-modal support, streaming output. Built-in RAG (knowledge base) with deep integration to [Dify](https://dify.ai), [Coze](https://coze.com), [n8n](https://n8n.io), [Langflow](https://langflow.org), [Deerflow](https://deerflow.tech), [Weknora](https://weknora.weixin.qq.com).
-- **Universal IM Platform Support** — One codebase for Discord, Telegram, Slack, LINE, QQ, WeChat, WeCom, Lark, DingTalk, KOOK.
-- **Production-Ready** — Access control, rate limiting, sensitive word filtering, comprehensive monitoring, and exception handling. Trusted by enterprises.
-- **Plugin Ecosystem** — Hundreds of plugins, event-driven architecture, component extensions, and [MCP protocol](https://modelcontextprotocol.io/) support.
-- **Web Management Panel** — Configure, manage, and monitor your bots through an intuitive browser interface. No YAML editing required.
-- **Multi-Pipeline Architecture** — Different bots for different scenarios, with comprehensive monitoring and exception handling.
+- **AI 对话与 Agent** — 多轮对话、工具调用、多模态、流式输出。自带 RAG（知识库），深度集成 [Dify](https://dify.ai)、[Coze](https://coze.com)、[n8n](https://n8n.io)、[Langflow](https://langflow.org)、[Deerflow](https://deerflow.tech)、[Weknora](https://weknora.weixin.qq.com)等 LLMOps 平台。
+- **全平台支持** — 一套代码，覆盖 QQ、微信、企业微信、飞书、钉钉、Discord、Telegram、Slack、LINE、KOOK 等平台。
+- **生产就绪** — 访问控制、限速、敏感词过滤、全面监控与异常处理，已被多家企业采用。
+- **插件生态** — 数百个插件，跨进程的事件驱动架构，组件扩展，适配 [MCP 协议](https://modelcontextprotocol.io/)。
+- **Web 管理面板** — 通过浏览器直观地配置、管理和监控机器人，无需手动编辑配置文件。
+- **多流水线架构** — 不同机器人用于不同场景，具备全面的监控和异常处理能力。
 
-[→ Learn more about all features](https://link.langbot.app/en/docs/features)
+[→ 了解更多功能特性](https://link.langbot.app/zh/docs/features)
 
-📍 Practical guides: [deploy a multi-platform AI bot in 5 minutes](https://langbot.app/en/blog/deploy-ai-bot-in-5-minutes/), [connect DeepSeek to WeChat, Discord, and Telegram](https://langbot.app/en/blog/connect-deepseek-to-wechat/), [run a Dify Agent in Discord, Telegram, and Slack](https://langbot.app/en/blog/dify-agent-discord-telegram-slack/), and [build an n8n-powered chatbot](https://langbot.app/en/blog/n8n-multi-platform-ai-chatbot/).
+📍 实践指南：[5 分钟部署多平台 AI 机器人](https://langbot.app/zh/blog/deploy-ai-bot-in-5-minutes/)、[将 DeepSeek 接入微信、企业微信与 Discord](https://langbot.app/zh/blog/connect-deepseek-to-wechat/)、[让 Dify Agent 跑在 Discord、Telegram 和 Slack 上](https://langbot.app/zh/blog/dify-agent-discord-telegram-slack/)，以及[用 n8n 构建多平台 AI 聊天机器人](https://langbot.app/zh/blog/n8n-multi-platform-ai-chatbot/)。
 
 ---
 
-## 😎 Stay Updated
+## 😎 保持更新
 
-Click the Star and Watch buttons in the top-right corner of the repository to get the latest updates.
+点击[仓库首页](https://github.com/langbot-app/LangBot)右上角 Star 和 Watch 按钮，获取最新动态。
 
 ![star gif](https://langbot.app/star.gif)
 
-## Quick Start
+## 快速开始
 
-### ☁️ LangBot Cloud (Recommended)
+### ☁️ LangBot Cloud（推荐）
 
-**[LangBot Cloud](https://space.langbot.app/cloud)** — Zero deployment, ready to use.
+**[LangBot Cloud](https://space.langbot.app/cloud)** — 免部署，开箱即用。
 
-### One-Line Launch
+### 一键启动
 
 ```bash
 uvx langbot
 ```
 
-> Requires [uv](https://docs.astral.sh/uv/getting-started/installation/). Visit http://localhost:5300 — done.
+> 需要安装 [uv](https://docs.astral.sh/uv/getting-started/installation/)。访问 http://localhost:5300 即可使用。
 
 ### Docker Compose
 
@@ -84,113 +101,136 @@ docker compose --profile all up -d
 ```
 
 
-### One-Click Cloud Deploy
+### 一键云部署
 
-[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/en-US/templates/ZKTBDH)
+[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/zh-CN/templates/ZKTBDH)
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.app/template/yRrAyL?referralCode=vogKPF)
 
-**More options:** [Docker](https://link.langbot.app/en/docs/docker) · [Manual](https://link.langbot.app/en/docs/manual-deploy) · [BTPanel](https://link.langbot.app/en/docs/bt-panel) · [Kubernetes](https://docs.langbot.app/en/deploy/langbot/kubernetes)
+**更多方式：** [Docker](https://link.langbot.app/zh/docs/docker) · [手动部署](https://link.langbot.app/zh/docs/manual-deploy) · [宝塔面板](https://link.langbot.app/zh/docs/bt-panel) · [Kubernetes](https://docs.langbot.app/zh/deploy/langbot/kubernetes)
 
 ---
 
-## Live Demo
+## 在线演示
 
-**Try it now:** https://demo.langbot.dev/
+**立即体验：** https://demo.langbot.dev/
+- 邮箱：`demo@langbot.app`
+- 密码：`langbot123456`
 
-- Email: `demo@langbot.app`
-- Password: `langbot123456`
-
-_Note: Public demo environment. Do not enter sensitive information._
+*注意：公开演示环境，请不要在其中填入任何敏感信息。*
 
 ---
 
-## Supported Platforms
+## 支持的平台
 
-| Platform | Status | Notes |
-|----------|--------|-------|
-| Discord | ✅ | Official |
-| Telegram | ✅ | Official |
-| Slack | ✅ | Official |
-| LINE | ✅ | Official |
-| QQ | ✅ | Personal & Official API (Channel, DM, Group) |
-| WeCom | ✅ | Enterprise WeChat, External CS, AI Bot |
-| WeChat | ✅ | Personal & Official Account |
-| Lark | ✅ | Official |
-| DingTalk | ✅ | Official |
-| KOOK | ✅ | Official |
+| 平台 | 状态 | 备注 |
+|------|------|------|
+| QQ | ✅ | 个人号、官方机器人（频道、私聊、群聊） |
+| 微信 | ✅ | 个人微信、微信公众号 |
+| 企业微信 | ✅ | 应用消息、对外客服、智能机器人 |
+| 飞书 | ✅ | 官方 |
+| 钉钉 | ✅ | 官方 |
 | Satori | ✅ |  |
-| Email | ✅ | Matrix, Satori |
-| Matrix | ✅ | Supports multiple bridged platforms such as Signal, WhatsApp, Messenger, iMessage, Mattermost, Google Chat, IRC, XMPP, Zulip, and more |
+| Discord | ✅ | 官方 |
+| Telegram | ✅ | 官方 |
+| Slack | ✅ | 官方 |
+| LINE | ✅ | 官方 |
+| KOOK | ✅ | 官方 |
+| Email | ✅ | 只 Matrix、Satori |
+| Matrix | ✅ | 支持多种桥接平台，如 Signal、WhatsApp、Messenger、iMessage、Mattermost、Google Chat、IRC、XMPP、Zulip 等 |
 
 ---
 
-## Supported LLMs & Integrations
+## 支持的大模型与集成
 
-| Provider                                                                                                          | Type         | Status |
-| ----------------------------------------------------------------------------------------------------------------- | ------------ | ------ |
-| [OpenAI](https://platform.openai.com/)                                                                            | LLM          | ✅     |
-| [Anthropic](https://www.anthropic.com/)                                                                           | LLM          | ✅     |
-| [DeepSeek](https://www.deepseek.com/)                                                                             | LLM          | ✅     |
-| [Google Gemini](https://aistudio.google.com/prompts/new_chat)                                                     | LLM          | ✅     |
-| [xAI](https://x.ai/)                                                                                              | LLM          | ✅     |
-| [Moonshot](https://www.moonshot.cn/)                                                                              | LLM          | ✅     |
-| [Zhipu AI](https://open.bigmodel.cn/)                                                                             | LLM          | ✅     |
-| [Ollama](https://ollama.com/)                                                                                     | Local LLM    | ✅     |
-| [LM Studio](https://lmstudio.ai/)                                                                                 | Local LLM    | ✅     |
-| [Dify](https://dify.ai)                                                                                           | LLMOps       | ✅     |
-| [MCP](https://modelcontextprotocol.io/)                                                                           | Protocol     | ✅     |
-| [SiliconFlow](https://siliconflow.cn/)                                                                            | Gateway      | ✅     |
-| [Aliyun Bailian](https://bailian.console.aliyun.com/)                                                             | Gateway      | ✅     |
-| [Volc Engine Ark](https://console.volcengine.com/ark/region:ark+cn-beijing/model?vendor=Bytedance&view=LIST_VIEW) | Gateway      | ✅     |
-| [ModelScope](https://modelscope.cn/docs/model-service/API-Inference/intro)                                        | Gateway      | ✅     |
-| [GiteeAI](https://ai.gitee.com/)                                                                                  | Gateway      | ✅     |
-| [CompShare](https://www.compshare.cn/?ytag=GPU_YY-gh_langbot)                                                     | GPU Platform | ✅     |
-| [PPIO](https://ppinfra.com/user/register?invited_by=QJKFYD&utm_source=github_langbot)                             | GPU Platform | ✅     |
-| [ShengSuanYun](https://www.shengsuanyun.com/?from=CH_KYIPP758)                                                    | GPU Platform | ✅     |
-| [接口 AI](https://jiekou.ai/)                                                                                     | Gateway      | ✅     |
-| [302.AI](https://share.302ai.cn/SuTG99)                                                                             | Gateway      | ✅     |
-| [Qiniu](https://www.qiniu.com/ai/agent)                                                                           | Gateway      | ✅     |
+| 提供商 | 类型 | 状态 |
+|--------|------|------|
+| [OpenAI](https://platform.openai.com/) | LLM | ✅ |
+| [Anthropic](https://www.anthropic.com/) | LLM | ✅ |
+| [DeepSeek](https://www.deepseek.com/) | LLM | ✅ |
+| [Google Gemini](https://aistudio.google.com/prompts/new_chat) | LLM | ✅ |
+| [xAI](https://x.ai/) | LLM | ✅ |
+| [Moonshot](https://www.moonshot.cn/) | LLM | ✅ |
+| [智谱AI](https://open.bigmodel.cn/) | LLM | ✅ |
+| [Ollama](https://ollama.com/) | 本地 LLM | ✅ |
+| [LM Studio](https://lmstudio.ai/) | 本地 LLM | ✅ |
+| [Dify](https://dify.ai) | LLMOps | ✅ |
+| [MCP](https://modelcontextprotocol.io/) | 协议 | ✅ |
+| [SiliconFlow](https://siliconflow.cn/) | 聚合平台 | ✅ |
+| [阿里云百炼](https://bailian.console.aliyun.com/) | 聚合平台 | ✅ |
+| [火山方舟](https://console.volcengine.com/ark/region:ark+cn-beijing/model?vendor=Bytedance&view=LIST_VIEW) | 聚合平台 | ✅ |
+| [ModelScope](https://modelscope.cn/docs/model-service/API-Inference/intro) | 聚合平台 | ✅ |
+| [GiteeAI](https://ai.gitee.com/) | 聚合平台 | ✅ |
+| [胜算云](https://www.shengsuanyun.com/?from=CH_KYIPP758) | GPU 平台 | ✅ |
+| [优云智算](https://www.compshare.cn/?ytag=GPU_YY-gh_langbot) | GPU 平台 | ✅ |
+| [PPIO](https://ppinfra.com/user/register?invited_by=QJKFYD&utm_source=github_langbot) | GPU 平台 | ✅ |
+| [接口 AI](https://jiekou.ai/) | 聚合平台 | ✅ |
+| [302.AI](https://share.302ai.cn/SuTG99) | 聚合平台 | ✅ |
+| [小马算力](https://www.tokenpony.cn/453z1) | 聚合平台 | ✅ |
+| [百宝箱Tbox](https://www.tbox.cn/open) | 智能体平台 | ✅ |
+| [七牛云Qiniu](https://www.qiniu.com/ai/agent) | 聚合平台 | ✅ |
 
-[→ View all integrations](https://link.langbot.app/en/docs/features)
+[→ 查看完整集成列表](https://link.langbot.app/zh/docs/features)
 
----
+### TTS（语音合成）
 
-## Why LangBot?
+| 平台/模型 | 备注 |
+|-----------|------|
+| [FishAudio](https://fish.audio/zh-CN/discovery/) | [插件](https://github.com/the-lazy-me/NewChatVoice) |
+| [海豚 AI](https://www.ttson.cn/?source=thelazy) | [插件](https://github.com/the-lazy-me/NewChatVoice) |
+| [AzureTTS](https://portal.azure.com/) | [插件](https://github.com/Ingnaryk/LangBot_AzureTTS) |
 
-| Use Case                    | How LangBot Helps                                                                          |
-| --------------------------- | ------------------------------------------------------------------------------------------ |
-| **Customer Support**        | Deploy AI agents to Slack/Discord/Telegram that answer questions using your knowledge base |
-| **Internal Tools**          | Connect n8n/Dify workflows to WeCom/DingTalk for automated business processes              |
-| **Community Management**    | Moderate QQ/Discord groups with AI-powered content filtering and interaction               |
-| **Multi-Platform Presence** | One bot, all platforms. Manage from a single dashboard                                     |
+### 文生图
 
----
-
-## Built for AI Agents 🤖
-
-LangBot is **agent-friendly by design** — your coding agents (Claude Code, Codex, Copilot, Cursor, …) can operate, extend, and deploy LangBot with first-class support:
-
-- **MCP Server** — LangBot exposes a built-in [Model Context Protocol](https://modelcontextprotocol.io/) endpoint at `/mcp`, mirroring the HTTP API so an agent can manage bots, pipelines, plugins, and models programmatically. Authenticate with the same API key (set a global key in `config.yaml` or use a per-user key) — no login flow required. Configure it in the Web panel's **API & MCP** tab.
-- **In-repo Skills** — The [`skills/`](skills/) directory is the **single source of truth** for working with LangBot: plugin development, core development, end-to-end testing, deployment, and operating the LangBot / LangBot Space MCP servers. Point your agent at this directory and it knows how to build.
-- **AGENTS.md** — Every repo ships an [`AGENTS.md`](AGENTS.md) (symlinked to `CLAUDE.md`) describing architecture, conventions, and the rule that API changes must keep the MCP server and skills in sync.
-- **`llms.txt`** — Machine-readable project context for LLMs is published on the website.
-
-> **Cloud / Marketplace:** [LangBot Space](https://space.langbot.app) also exposes an MCP server so agents can search and inspect the plugin / MCP / skill marketplace, authenticated with a Personal Access Token.
+| 平台/模型 | 备注 |
+|-----------|------|
+| 阿里云百炼 | [插件](https://github.com/Thetail001/LangBot_BailianTextToImagePlugin) |
 
 ---
 
-## Community
+## 为什么选择 LangBot？
+
+| 使用场景 | LangBot 如何帮助 |
+|----------|------------------|
+| **客户服务** | 将 AI Agent 部署到微信/企微/钉钉/飞书，基于知识库自动回答用户问题 |
+| **内部工具** | 将 n8n/Dify 工作流接入企微/钉钉，实现业务流程自动化 |
+| **社群运营** | 在 QQ/Discord 群中使用 AI 驱动的内容审核与智能互动 |
+| **多平台触达** | 一个机器人，覆盖所有平台。通过统一面板集中管理 |
+
+---
+
+## 为 AI Agent 而生 🤖
+
+LangBot **从设计上就对 Agent 友好** —— 你的编码 Agent（Claude Code、Codex、Copilot、Cursor 等）可以一等公民般地操作、扩展和部署 LangBot：
+
+- **MCP Server** —— LangBot 内置 [Model Context Protocol](https://modelcontextprotocol.io/) 端点 `/mcp`，与 HTTP API 对齐，Agent 可编程式管理机器人、流水线、插件和模型。使用同一套 API Key 鉴权（可在 `config.yaml` 配置全局 Key，或使用用户 Key），无需登录流程。在 Web 面板的 **API 与 MCP** 标签页中配置。
+- **仓库内 Skills** —— [`skills/`](skills/) 目录是使用 LangBot 的**唯一事实来源**：插件开发、核心开发、端到端测试、部署，以及操作 LangBot / LangBot Space MCP Server。把 Agent 指向这个目录，它就知道如何动手。
+- **AGENTS.md** —— 每个仓库都提供 [`AGENTS.md`](AGENTS.md)（软链到 `CLAUDE.md`），描述架构、规范，以及「API 变更必须同步更新 MCP Server 和 skills」的约定。
+- **`llms.txt`** —— 面向 LLM 的机器可读项目上下文已发布在官网。
+
+> **云端 / 市场：** [LangBot Space](https://space.langbot.app) 同样开放 MCP Server，Agent 可搜索和查看插件 / MCP / Skill 市场，使用 Personal Access Token 鉴权。
+
+---
+
+## 社区
 
 [![Discord](https://img.shields.io/discord/1335141740050649118?logo=discord&label=Discord)](https://discord.gg/wdNEHETs87)
+[![QQ Group](https://img.shields.io/badge/%E7%A4%BE%E5%8C%BAQQ%E7%BE%A4-1030838208-blue)](https://qm.qq.com/q/DxZZcNxM1W)
 
-- [Discord Community](https://discord.gg/wdNEHETs87)
+- [Discord 社区](https://discord.gg/wdNEHETs87)
+- [QQ 社区群](https://qm.qq.com/q/DxZZcNxM1W)
 
 ---
 
-## Contributors
+## 贡献者
 
-Thanks to all [contributors](https://github.com/langbot-app/LangBot/graphs/contributors) who have helped make LangBot better:
+感谢所有[贡献者](https://github.com/langbot-app/LangBot/graphs/contributors)对 LangBot 的帮助：
 
 <a href="https://github.com/langbot-app/LangBot/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=langbot-app/LangBot" />
 </a>
+
+<!--
+## For Code Agents
+
+If you're a code agent based on LLM, you should read [AGENTS.md](AGENTS.md) to understand the project structure and development process before you start any development.
+-->

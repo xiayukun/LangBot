@@ -1,3 +1,20 @@
+# Feishu Agent Hub
+
+> 이 프로젝트는 LangBot을 기반으로 독립적으로 2차 개발되었으며 LangBot 공식 배포판이 아닙니다.
+
+**LangBot 기반의 Feishu 알림 게이트웨이, 메시지 라우터 및 Agent 호출 플랫폼입니다.**
+
+## 이 프로젝트의 주요 변경 사항
+
+Feishu Agent Hub는 LangBot의 봇 및 Agent 기반을 유지하면서 Feishu를 프로그래밍 가능한 알림 채널과 Agent 진입점으로 사용하기 위한 기능을 추가합니다.
+
+- **통합 알림 센터**: 봇이 접근할 수 있는 Feishu 개인 대화와 그룹 대화를 재사용 가능한 대상으로 저장합니다. 관리 화면, HTTP API, MCP에서 하나 이상의 대상으로 전송할 수 있으며 멱등성 키와 대상별 전송 결과를 지원합니다.
+- **명시적 수신 라우팅**: 봇을 설정된 라우트 전용 모드로 운영할 수 있습니다. 일치하는 라우트가 없는 메시지는 기록되지만 Agent를 호출하지 않습니다. 그룹에서는 멘션된 경우에만 또는 일치하는 모든 메시지에 대해 트리거하도록 선택할 수 있습니다.
+- **외부 Agent 커넥터**: 관리자가 Agent 엔드포인트, 시스템 프롬프트, 허용된 스킬 및 MCP 엔드포인트를 설정합니다. 호출에는 최근 기록과 아직 확인되지 않은 메시지가 포함되며 Agent가 요청을 명시적으로 수락한 뒤에만 컨텍스트 커서가 이동합니다.
+- **Agent용 API 및 MCP**: Agent는 승인된 알림 대상을 검색하고, 알림을 전송하고, 전송 결과를 조회하고, 라우팅 리소스를 읽을 수 있습니다. 관리 화면은 Codex 등에서 바로 사용할 수 있는 Agent Guide와 MCP 클라이언트 설정을 제공합니다.
+
+> 업스트림 동기화를 쉽게 유지할 수 있도록 아래에 LangBot의 원래 소개와 사용 문서를 보존했습니다. 설계 세부 정보는 [`docs/specs/notification-gateway.md`](docs/specs/notification-gateway.md)를 참조하세요.
+
 <p align="center">
 <a href="https://langbot.app">
 <img width="130" src="res/logo-blue.png" alt="LangBot"/>
@@ -10,7 +27,7 @@
 <h3>AI 에이전트 IM 봇 구축을 위한 프로덕션 등급 플랫폼.</h3>
 <h4>Slack, Discord, Telegram, WeChat 등에 AI 봇을 빠르게 구축, 디버그 및 배포.</h4>
 
-[English](README.md) / [简体中文](README_CN.md) / [繁體中文](README_TW.md) / [日本語](README_JP.md) / [Español](README_ES.md) / [Français](README_FR.md) / 한국어 / [Русский](README_RU.md) / [Tiếng Việt](README_VI.md)
+[English](README_EN.md) / [简体中文](README.md) / [繁體中文](README_TW.md) / [日本語](README_JP.md) / [Español](README_ES.md) / [Français](README_FR.md) / 한국어 / [Русский](README_RU.md) / [Tiếng Việt](README_VI.md)
 
 [![Discord](https://img.shields.io/discord/1335141740050649118?logo=discord&labelColor=%20%235462eb&logoColor=%20%23f5f5f5&color=%20%235462eb)](https://discord.gg/wdNEHETs87)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/langbot-app/LangBot)

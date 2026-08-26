@@ -113,9 +113,9 @@ seekdb = [
 ]
 
 [project.urls]
-Homepage = "https://langbot.app"
-Documentation = "https://docs.langbot.app"
-Repository = "https://github.com/langbot-app/LangBot"
+Homepage = "https://github.com/xiayukun/FeishuAgentHub"
+Documentation = "https://github.com/xiayukun/FeishuAgentHub#readme"
+Repository = "https://github.com/xiayukun/FeishuAgentHub"
 
 [project.scripts]
 langbot = "langbot.__main__:main"

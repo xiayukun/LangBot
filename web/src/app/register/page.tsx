@@ -122,7 +122,7 @@ export default function Register() {
           </div>
           <img
             src={langbotIcon}
-            alt="LangBot"
+            alt="Feishu Agent Hub"
             className="w-16 h-16 mb-4 mx-auto"
           />
           <CardTitle className="text-2xl text-center">

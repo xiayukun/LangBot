@@ -2,14 +2,14 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-const APP_NAME = 'LangBot';
+const APP_NAME = 'Feishu Agent Hub';
 
 // Map a route path to the i18n key used for its (type-level) document title.
 // Reuses existing translation keys so titles stay in sync with the sidebar and
 // page headers across all locales. The /home/* section is intentionally NOT
 // listed here: those titles are driven from inside HomeLayout, which has access
 // to the currently-selected sub-entity name (detailEntityName) via context and
-// renders "<entity> · <type> · LangBot".
+// renders "<entity> · <type> · Feishu Agent Hub".
 const ROUTE_TITLE_KEYS: { match: (path: string) => boolean; key: string }[] = [
   { match: (p) => p === '/login', key: 'common.login' },
   { match: (p) => p === '/register', key: 'register.title' },
@@ -18,7 +18,7 @@ const ROUTE_TITLE_KEYS: { match: (path: string) => boolean; key: string }[] = [
 ];
 
 /**
- * Builds a "<...parts> · LangBot" document title from the given page-name parts,
+ * Builds a "<...parts> · Feishu Agent Hub" document title from the given page-name parts,
  * dropping empties. Falls back to the bare app name when no parts resolve.
  */
 export function buildDocumentTitle(

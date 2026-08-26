@@ -1,3 +1,20 @@
+# Feishu Agent Hub
+
+> Este proyecto es un desarrollo derivado e independiente de LangBot y no es una distribución oficial de LangBot.
+
+**Una pasarela de notificaciones de Feishu, un enrutador de mensajes y una plataforma de invocación de Agents basada en LangBot.**
+
+## Principales cambios de este proyecto
+
+Feishu Agent Hub conserva la base de bots y Agents de LangBot y añade las funciones necesarias para usar Feishu como canal de notificaciones programable y punto de entrada para Agents:
+
+- **Centro de notificaciones administrado**: guarda conversaciones directas y grupos de Feishu accesibles por un bot como destinos reutilizables. La interfaz, la API HTTP y MCP pueden enviar a uno o varios destinos, con claves de idempotencia y resultados por destino.
+- **Enrutamiento de entrada explícito**: un bot puede funcionar solo con rutas configuradas. Los mensajes sin una ruta coincidente se registran, pero no invocan ningún Agent. En grupos se puede elegir entre activar solo con una mención o con todos los mensajes coincidentes.
+- **Conectores de Agents externos**: los administradores configuran el endpoint, el prompt de sistema, las skills permitidas y el endpoint MCP. Cada llamada incluye el historial reciente y los mensajes aún no confirmados; el cursor de contexto solo avanza cuando el Agent acepta explícitamente la solicitud.
+- **API y MCP orientados a Agents**: los Agents pueden descubrir destinos autorizados, enviar notificaciones, consultar resultados y leer recursos de enrutamiento. La interfaz incluye una guía copiable y configuraciones MCP para Codex y otros Agents compatibles.
+
+> La presentación y la documentación originales de LangBot se conservan debajo para facilitar la sincronización con el proyecto upstream. Consulte [`docs/specs/notification-gateway.md`](docs/specs/notification-gateway.md) para el diseño de Feishu Agent Hub.
+
 <p align="center">
 <a href="https://langbot.app">
 <img width="130" src="res/logo-blue.png" alt="LangBot"/>
@@ -10,7 +27,7 @@
 <h3>Plataforma de grado de producción para construir bots de mensajería instantánea con agentes de IA.</h3>
 <h4>Construya, depure y despliegue bots de IA rápidamente en Slack, Discord, Telegram, WeChat y más.</h4>
 
-[English](README.md) / [简体中文](README_CN.md) / [繁體中文](README_TW.md) / [日本語](README_JP.md) / Español / [Français](README_FR.md) / [한국어](README_KO.md) / [Русский](README_RU.md) / [Tiếng Việt](README_VI.md)
+[English](README_EN.md) / [简体中文](README.md) / [繁體中文](README_TW.md) / [日本語](README_JP.md) / Español / [Français](README_FR.md) / [한국어](README_KO.md) / [Русский](README_RU.md) / [Tiếng Việt](README_VI.md)
 
 [![Discord](https://img.shields.io/discord/1335141740050649118?logo=discord&labelColor=%20%235462eb&logoColor=%20%23f5f5f5&color=%20%235462eb)](https://discord.gg/wdNEHETs87)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/langbot-app/LangBot)

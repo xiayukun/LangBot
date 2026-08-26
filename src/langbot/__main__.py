@@ -7,21 +7,18 @@ import os
 
 from langbot.pkg.utils import paths
 
-# ASCII art banner
+# Product banner. Internal package names remain ``langbot`` for upstream compatibility.
 asciiart = r"""
- _                   ___      _   
-| |   __ _ _ _  __ _| _ ) ___| |_ 
-| |__/ _` | ' \/ _` | _ \/ _ \  _|
-|____\__,_|_||_\__, |___/\___/\__|
-               |___/              
+Feishu Agent Hub
+基于 LangBot 的飞书通知网关、消息路由与 Agent 调用平台
 
-⭐️ Open Source 开源地址: https://github.com/langbot-app/LangBot
-📖 Documentation 文档地址: https://docs.langbot.app
+⭐️ Project 项目地址: https://github.com/xiayukun/FeishuAgentHub
+↗️ Upstream 上游项目: https://github.com/langbot-app/LangBot
 """
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description='LangBot')
+    parser = argparse.ArgumentParser(description='Feishu Agent Hub')
     parser.add_argument(
         '--standalone-runtime',
         action='store_true',

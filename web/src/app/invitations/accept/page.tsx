@@ -264,7 +264,7 @@ export default function AcceptInvitationPage() {
           </div>
           <img
             src={langbotIcon}
-            alt="LangBot"
+            alt="Feishu Agent Hub"
             className="mx-auto mb-3 size-14"
           />
           <CardTitle className="text-center">

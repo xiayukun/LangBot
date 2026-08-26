@@ -158,7 +158,9 @@ function buildToolSourceGroups(
     const source = normalizeToolSource(tool);
     const providerName =
       tool.source_name ||
-      (source === 'builtin' ? 'LangBot' : sourceLabels[source] || source);
+      (source === 'builtin'
+        ? 'Feishu Agent Hub'
+        : sourceLabels[source] || source);
     const providerKey = `${source}:${tool.source_id || providerName}`;
 
     if (!sourceGroups.has(source)) {

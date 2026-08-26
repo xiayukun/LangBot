@@ -101,7 +101,7 @@ export default function WorkspaceSelectPage() {
           </div>
           <img
             src={langbotIcon}
-            alt="LangBot"
+            alt="Feishu Agent Hub"
             className="mx-auto mb-4 size-16"
           />
           <CardTitle

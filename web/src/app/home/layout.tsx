@@ -213,7 +213,7 @@ function HomeLayoutInner({ children }: { children: React.ReactNode }) {
   // Drive the browser tab title for the /home section. The type-level label
   // prefers the sidebar-provided `title`, falling back to a route-derived key on
   // direct page loads. When a sub-entity (plugin / MCP / pipeline / KB / skill)
-  // is open, its name is prepended: "<entity> · <type> · LangBot".
+  // is open, its name is prepended: "<entity> · <type> · Feishu Agent Hub".
   useEffect(() => {
     const routeEntry = HOME_TITLE_KEYS.find((e) => e.match(pathname));
     const fallbackType =
